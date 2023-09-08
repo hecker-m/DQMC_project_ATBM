@@ -160,11 +160,11 @@ function calc_observables!(binner_array::Array, mc ::DQMC, ϕ_field::Array, ::Va
 
     ## #9 is the A1′ bilinear order parameter ⟨ |ΦA1′| ⟩
     push!(binner_array[9], mean(abs.(ΦA1p)))    
-    ## #10 is the nematic structure factor ⟨ ΦB1²(0) ⟩
+    ## #10 is the A1′ bilinear structure factor ⟨ (ΦA1′)²(0) ⟩
     push!(binner_array[10], mean(ΦA1p .^2) - 2/(β*N*U) * mean(ΦA1) + Nϕ/(β*δτ*N^2 *U^2))
-    ## #11 is the nematic susceptibility 1/(Nτ²)∑_{ℓ,ℓ′} ⟨ ΦB1(ℓ) ΦB1(ℓ′)⟩  ± …
+    ## #11 is the A1′ bilinear susceptibility 1/(Nτ²)∑_{ℓ,ℓ′} ⟨ ΦA1′(ℓ) ΦA1′(ℓ′)⟩  ± …
     push!(binner_array[11], β*mean(ΦA1p)^2 - 2/(N*U) * mean(ΦA1) + Nϕ/(δτ*N^2 *U^2)) 
-    ## #12 for the Binder cumulant, we also need  ⟨ ΦA1p⁴ ⟩
+    ## #12 for the Binder cumulant, we also need  ⟨ (ΦA1′)⁴ ⟩
     push!(binner_array[12], mean(ΦA1p .^4)  )
     if Nϕ>1
         DA1_ΦB1p=Vector{Float64}(undef, Nτ)
