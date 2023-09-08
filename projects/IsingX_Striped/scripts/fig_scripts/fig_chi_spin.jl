@@ -1,9 +1,4 @@
-df_LT=sort(unique(df[:,[:T,:L]]),:T, rev=true)
-df_LU=sort(unique(df[:,[:U,:L]]),:U)
-df_OP_LT=sort(unique(df_OP[:,[:T,:L]]),:T , rev=true) 
-df_OP_LU=sort(unique(df_OP[:,[:U,:L]]),:U) 
-df_ϕ_OP_LT=sort(unique(df_ϕ_OP[:,[:T,:L]]),:T , rev=true)
-df_ϕ_OP_LU=sort(unique(df_ϕ_OP[:,[:U,:L]]),:U)
+
 
 ########################
 ## spin susceptibility, Q=(0,0)
@@ -146,13 +141,13 @@ for (idx, (Ts, Ls)) in enumerate(zip(df_OP_LT[:,:T],df_OP_LT[:,:L]))
     df_ϕ_OPs=filter(:L=>L -> L==Ls ,filter(:T =>T ->T==Ts, df_ϕ_OP))  
  
     eb=errorbars!(df_OPs[!,:U], df_OPs[!,Symbol("Mx_X_OP34")], df_OPs[!,Symbol("ΔMx_X_OP34")],
-    1/sqrt(2) * df_ϕ_OPs[!,Symbol("ΔMx_OP")]  .* (df_ϕ_OPs[!,:U].^(-1/2)); linewidth=er_lw, 
+        df_ϕ_OPs[!,Symbol("ΔMx_OP")] ; linewidth=er_lw, 
         whiskerwidth=10,color = colorschemes[:coolwarm][1-1/Ts/βmax])
     CairoMakie.translate!(eb, 0, 0, -0.5)
     CairoMakie.scatterlines!(top, df_OPs[!,:U], df_OPs[!,Symbol("Mx_X_OP34")] ;  marker = :xcross,
         color = colorschemes[:coolwarm][1-1/Ts/βmax], label = "β=$((1/Ts))", markersize=10) 
         
-    CairoMakie.scatter!(top, df_ϕ_OPs[!,:U],1/sqrt(2) * df_ϕ_OPs[!,Symbol("Mx_OP")]  .* (df_ϕ_OPs[!,:U].^(-1/2)) ;  
+    CairoMakie.scatter!(top, df_ϕ_OPs[!,:U], df_ϕ_OPs[!,Symbol("Mx_OP")]  ;  
         marker = '□', color = colorschemes[:coolwarm][1-1/Ts/βmax],  markersize=15)         
 end
 # CairoMakie.translate!(poly!(Point2f[(1.5, 0), (1.5, end), (2.4, end), (2.4, 0)], color = :gray, strokewidth = 0), (0, 0, -0.8))

@@ -1,4 +1,3 @@
-df_LT=sort(unique(df[:,[:T,:L]]),:T)
 
 ########################
 ## pairing susceptibility, 00
@@ -89,7 +88,7 @@ for (idx, (Ts, Ls)) in enumerate(zip(df_LT[:,:T],df_LT[:,:L]))
     eb=errorbars!(dfs[!,:U], dfs[!,:PDS_spm_π0], dfs[!,:ΔPDS_spm_π0]; linewidth=er_lw, 
         whiskerwidth=10,color = colorschemes[:coolwarm][1-1/Ts/βmax])
     CairoMakie.translate!(eb, 0, 0, -0.5)
-    CairoMakie.scatter!(top, dfs[!,:U], dfs[!,:PDS_spm_π0] ;  marker = :xcross,
+    CairoMakie.scatterlines!(top, dfs[!,:U], dfs[!,:PDS_spm_π0] ;  marker = :xcross,
         color = colorschemes[:coolwarm][1-1/Ts/βmax], 
         label = "β=$(1/Ts)", markersize=20)        
 end

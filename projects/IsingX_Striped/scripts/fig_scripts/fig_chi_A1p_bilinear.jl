@@ -1,7 +1,4 @@
-df_LT=sort(unique(df[:,[:T,:L]]),:T, rev=true)
-df_LU=sort(unique(df[:,[:U,:L]]),:U)
-df_OP_LT=sort(unique(df_OP[:,[:T,:L]]),:T)
-df_OP_LU=sort(unique(df_OP[:,[:U,:L]]),:U)
+
 
 ################
 ## A1' charge density wave, (A1' bilinear proxy) figure

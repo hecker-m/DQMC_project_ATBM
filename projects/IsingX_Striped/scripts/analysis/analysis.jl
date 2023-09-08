@@ -1,8 +1,8 @@
-include("../../src/MonteCarlo.jl_modified/src/MonteCarlo2.jl")
+include("../../../../src/MonteCarlo.jl_modified/src/MonteCarlo2.jl")
 using .MonteCarlo
 using Distributions, DataFrames, JLD2, Dates, Plots, LinearAlgebra, CSV
-include("../../src/Analysis_Fcns/analysis_fcns.jl")
-include("../../src/Analysis_Fcns/load_fcns.jl")
+include("../../../../src/Analysis_Fcns/analysis_fcns.jl")
+include("../../../../src/Analysis_Fcns/load_fcns.jl")
 
 
 Us=[0.4, 0.6, 0.8, 0.9, 1.0, 1.1, 1.3, 1.6, 2.0, 2.4]
@@ -80,7 +80,7 @@ for _para in eachindex(paras)
     haskey(paras[_para], :id) ? jobid=paras[_para].id : jobid = 0;
     N=L^2;
     Nworker=10;
-    path="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/IsingX_Striped/run_saves/";
+    path="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/DQMC_project_ATBM/projects/IsingX_Striped/run_saves/";
     dqmcs = []
 
     @time begin n_workers=_load(dqmcs, L, T, β, U, peierls, therm, sweeps, Nworker, 
@@ -90,7 +90,7 @@ for _para in eachindex(paras)
     end
     n_workers != Nworker ? println("Only $(n_workers) finished for parameters $(_para) !!!!") : nothing ;
     println("loaded set $(_para)")
-    global mc_inst=dqmcs[1]     #For later coding, it helps to have one `mc` instance to work with
+    #global mc_inst=dqmcs[1]     #For later coding, it helps to have one `mc` instance to work with
 
     ############
     ## Computing the mean and std_errors of all observables 
