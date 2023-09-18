@@ -27,6 +27,6 @@ Manifest.toml
 *.jld2
 *.code-workspace
 #specific files
-projects/IsingX_Neel/figures/older_figures/*.png
-projects/IsingX_Striped/figures/older_figures/*.png
-projects/Heisenberg_Striped/figures/older_figures/*.png
+projects/IsingX_Neel/figures/older_figures/*
+projects/IsingX_Striped/figures/older_figures/*
+projects/Heisenberg_Striped/figures/older_figures/*

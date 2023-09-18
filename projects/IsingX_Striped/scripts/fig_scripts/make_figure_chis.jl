@@ -33,7 +33,7 @@ include(p_input * "fig_chi_pair.jl")
 include(p_input * "fig_chi_spin.jl")
 #TODO: Magnetic order parameter
 
-include(p_input * "fig_chi_B1_nematic.jl")
+ include(p_input * "fig_chi_B1_nematic.jl")
 
 include(p_input * "fig_chi_A1p_bilinear.jl")
 

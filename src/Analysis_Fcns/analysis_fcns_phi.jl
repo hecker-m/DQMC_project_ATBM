@@ -152,7 +152,7 @@ function calc_observables!(binner_array::Array, mc ::DQMC, ϕ_field::Array, ::Va
     ## #5 is the nematic order parameter ⟨ |ΦB1| ⟩
     push!(binner_array[5], mean(abs.(ΦB1)))    
     ## #6 is the nematic structure factor ⟨ ΦB1²(0) ⟩
-    push!(binner_array[6], mean(ΦB1 .^2) - 2/(β*N*U) * mean(ΦA1) + Nϕ/(β*δτ*N^2 *U^2))
+    push!(binner_array[6], mean(ΦB1 .^2) - 2/(N*U*δτ) * mean(ΦA1) + Nϕ/(δτ^2*N^2 *U^2))
     ## #7 is the nematic susceptibility β*1/(Nτ²)∑_{ℓ,ℓ′} ⟨ ΦB1(ℓ) ΦB1(ℓ′)⟩  ± …
     push!(binner_array[7], β*mean(ΦB1)^2 - 2/(N*U) * mean(ΦA1) + Nϕ/(δτ*N^2 *U^2))    
     ## #8 for the Binder cumulant, we also need  ⟨ ΦB1⁴ ⟩
@@ -161,7 +161,7 @@ function calc_observables!(binner_array::Array, mc ::DQMC, ϕ_field::Array, ::Va
     ## #9 is the A1′ bilinear order parameter ⟨ |ΦA1′| ⟩
     push!(binner_array[9], mean(abs.(ΦA1p)))    
     ## #10 is the A1′ bilinear structure factor ⟨ (ΦA1′)²(0) ⟩
-    push!(binner_array[10], mean(ΦA1p .^2) - 2/(β*N*U) * mean(ΦA1) + Nϕ/(β*δτ*N^2 *U^2))
+    push!(binner_array[10], mean(ΦA1p .^2) - 2/(N*U*δτ) * mean(ΦA1) + Nϕ/(δτ^2*N^2 *U^2))
     ## #11 is the A1′ bilinear susceptibility 1/(Nτ²)∑_{ℓ,ℓ′} ⟨ ΦA1′(ℓ) ΦA1′(ℓ′)⟩  ± …
     push!(binner_array[11], β*mean(ΦA1p)^2 - 2/(N*U) * mean(ΦA1) + Nϕ/(δτ*N^2 *U^2)) 
     ## #12 for the Binder cumulant, we also need  ⟨ (ΦA1′)⁴ ⟩
@@ -177,7 +177,7 @@ function calc_observables!(binner_array::Array, mc ::DQMC, ϕ_field::Array, ::Va
         ## #13 is the B1′ bilinear order parameter ⟨ |ΦB1′| ⟩
         push!(binner_array[13], ΦB1p_OP/Nτ)    
         ## #14 is the B1′ bilinear structure factor ⟨ [ΦB1′(0)]² ⟩
-        push!(binner_array[14], mean(DA1_ΦB1p))
+        push!(binner_array[14], mean(DA1_ΦB1p) - (1+N_B1p)/(N*U*δτ) * mean(ΦA1) + 2N_B1p/(δτ^2*N^2 *U^2) )
         ## #15 is the B1′ bilinear susceptibility 1/(Nτ²)∑_{ℓ,ℓ′} ⟨ ΦB1′(ℓ) ΦB1′(ℓ′)⟩  ± …
         push!(binner_array[15], β*sum(mean(ΦB1p, dims=2) .^2) - (1+N_B1p)/(N*U) * mean(ΦA1) +2N_B1p/(δτ*N^2 *U^2)) 
         ## #16 for the Binder cumulant, we also need  ⟨ [ΦB1′(0)]⁴ ⟩

@@ -1,19 +1,19 @@
 #!/usr/bin/bash -l
-#SBATCH --time=28:00:00
+#SBATCH --time=36:00:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=10
 #SBATCH --mem-per-cpu=5g
 #SBATCH --mail-type=all
 #SBATCH --mail-user=mhecker@umn.edu
-#SBATCH --array=1-6
-#SBATCH --job-name=IsingX_Neel
+#SBATCH --array=1-160
+#SBATCH --job-name=IsingX_Striped
 #SBATCH -o %x-%A_%a.out
 #=
     pwd
     echo $SLURM_NPROCS
     echo $SLURM_CPUS_PER_TASK
     echo
-    srun julia --threads=$SLURM_CPUS_PER_TASK slurm_IsingX_Neel.jl
+    srun julia --threads=$SLURM_CPUS_PER_TASK slurm_IsingX_Striped.jl
     exit
 =#
 
@@ -29,8 +29,8 @@ LinearAlgebra.BLAS.set_num_threads(1)
 
 # Note that we implement U=U/Nϕ (see below)
 
-Us=[0.6, 0.7, 0.8, 1.0, 1.2, 1.3]
-βs=[10, ]
+Us=[0.4, 0.6, 0.8, 0.9, 1.0, 1.1, 1.3, 1.6, 2.0, 2.4]
+βs=[1, 2, 2.25, 2.5, 2.75, 3, 3.5, 4, 4.5, 5, 5.5, 6, 7, 8, 10, 20]
 paras=[(L=8, β=β0, U=U0, Pe=true) for U0 in Us, β0 in βs][:]
 
 therm = 1000
@@ -77,12 +77,13 @@ end
     #######
     #Initializing the Model, and the DQMC Simulation
     #######
-    model = TwoBandModel(dims=2, L=L, U = U/Nϕ, tx = [-(t+δ);-(t-δ)], ty = [-(t-δ);-(t+δ)],
-        tp = [0.0; 0.0], μs = [μ0;-μ0], peierls=peierls)
+    model = TwoBandModel(dims=2, L=L, U = U/Nϕ, tx = [0.6; 0.2], ty = [0.6; 0.2],
+        tp = [0.8; 1.0], μs = [1.0;-1.0], peierls=peierls)
+
 
     mc = DQMC(model, field=getfield(Main, field), Nϕ=Nϕ, beta=beta, scheduler = schedule,
             safe_mult = 5, delta_tau=0.05, measure_rate = 10, box_local = 15.0, box_global = 1.0,
-            recording_rate=20)
+            recording_rate=10)
 
     #######
     #Adding thermalization measurements
@@ -107,11 +108,11 @@ end
     mc.measurements[:Mx_Y_OP] = Mx_X_OP(mc, model, :y)
     mc.measurements[:Mx_Z_OP] = Mx_X_OP(mc, model, :z)
 
-    #mc.measurements[:SDC_Mx_z] = spin_density_correlation(mc, model, :z, kernel=full_sdc_Mx_z_kernel, capacity=cap)
+    mc.measurements[:SDC_Mx_z] = spin_density_correlation(mc, model, :z, kernel=full_sdc_Mx_z_kernel, capacity=cap)
     mc.measurements[:SDS_Mx_z] = spin_density_susceptibility(mc, model, :z, kernel=full_sdc_Mx_z_kernel, capacity=cap)
-    #mc.measurements[:SDC_Mx_x] = spin_density_correlation(mc, model, :x, kernel=full_sdc_Mx_x_kernel, capacity=cap)
+    mc.measurements[:SDC_Mx_x] = spin_density_correlation(mc, model, :x, kernel=full_sdc_Mx_x_kernel, capacity=cap)
     mc.measurements[:SDS_Mx_x] = spin_density_susceptibility(mc, model, :x, kernel=full_sdc_Mx_x_kernel, capacity=cap)
-    #mc.measurements[:SDC_Mx_y] = spin_density_correlation(mc, model, :y, kernel=full_sdc_Mx_y_kernel, capacity=cap)
+    mc.measurements[:SDC_Mx_y] = spin_density_correlation(mc, model, :y, kernel=full_sdc_Mx_y_kernel, capacity=cap)
     mc.measurements[:SDS_Mx_y] = spin_density_susceptibility(mc, model, :y, kernel=full_sdc_Mx_y_kernel, capacity=cap)
 
     ##### superconductivity
@@ -120,19 +121,57 @@ end
     mc.measurements[:PDS_s] = pairing_susceptibility(mc, model, kernel = pc_swave_kernel, lattice_iterator = EachSitePairByDistance(), capacity=cap)
     #mc.measurements[:PDC_spm] = pairing_correlation(mc, model, kernel = pc_spm_wave_kernel, lattice_iterator = EachSitePairByDistance(), capacity=cap)
     mc.measurements[:PDS_spm] = pairing_susceptibility(mc, model, kernel = pc_spm_wave_kernel, lattice_iterator = EachSitePairByDistance(), capacity=cap)
+    mc.measurements[:PDS_XX] = pairing_susceptibility(mc, model, kernel = pc_XX_wave_kernel, lattice_iterator = EachSitePairByDistance(), capacity=cap)
+    mc.measurements[:PDS_YYzz] = pairing_susceptibility(mc, model, kernel = pc_YYzz_wave_kernel, lattice_iterator = EachSitePairByDistance(), capacity=cap)
+
+    mc.measurements[:Δ_Zy_bil_OP] = Δ_Zy_bil_OP(mc, model)
+    mc.measurements[:Δ_0y_bil_OP] = Δ_0y_bil_OP(mc, model)
+    mc.measurements[:Δ_Xy_bil_OP] = Δ_Xy_bil_OP(mc, model)
+    mc.measurements[:Δ_Ysum_bil_OP] = Δ_Ysum_bil_OP(mc, model)
+
 
     ##### charge sector
     #
     #mc.measurements[:CDC] = charge_density_correlation(mc, model, capacity=cap)
     mc.measurements[:CDS] = charge_density_susceptibility(mc, model, capacity=cap)
     #mc.measurements[:Zk_proxy] = spectral_weight_proxy(mc, model, capacity=cap)
+    #mc.measurements[:green]= greens_measurement(mc, model, capacity=cap)
+    #mc.measurements[:CD_X_OP] = CD_X_OP(mc, model)  #For reasons unclear, the ρ^{x0} -OP is purely imaginary
+    #CD_X OP is zero in case of Ising-X
+    mc.measurements[:CDSxx]=charge_density_susceptibility(mc, model, capacity=cap, flavor_iterator = MonteCarlo.FlavorIterator(mc, 0),
+            kernel = full_cdc_XX_kernel)
+
+
+    ##### B1-nematic sector
+    #
+    mc.measurements[:B1_OP] = nematic_OP(mc, model, obs=FullBinner(Float64))
+    mc.measurements[:B1_proxy_OP] = proxy_B1_OP(mc, model)
+    mc.measurements[:B1_CDS] = B1_charge_density_susceptibility(mc, model, capacity=cap)
+    mc.measurements[:NemS] = nematic_susceptibility(mc, model, capacity=cap)
+    mc.measurements[:NemC] = nematic_correlation(mc, model, capacity=cap)
+
+    ##### A1p double-Q sector
+    #
+    mc.measurements[:A1p_OP] = A1p_OP(mc, model, obs=FullBinner(Float64))
+    mc.measurements[:A1p_proxy_OP] = proxy_A1p_OP(mc, model)
+    mc.measurements[:A1p_dQ_S] = A1_Q1Q2_susceptibility(mc, model, capacity=cap)
+    mc.measurements[:A1p_dQ_C] = A1_Q1Q2_correlation(mc, model, capacity=cap)
+
+    ##### B1p double-Q sector
+    #
+    #mc.measurements[:B1p_OP_x] = B1p_OP(mc, model, :x, obs=FullBinner(Float64))
+    #mc.measurements[:B1p_OP_y] = B1p_OP(mc, model, :y, obs=FullBinner(Float64))
+    mc.measurements[:B1p_OP_z] = B1p_OP(mc, model, :z, obs=FullBinner(Float64))
+    #B1p OP is zero in x, and y direction in case of Ising-X
+    mc.measurements[:B1p_dQ_C] = B1p_Q1Q2_correlation(mc, model, capacity=cap)
+    mc.measurements[:B1p_dQ_S] = B1p_Q1Q2_susceptibility(mc, model, capacity=cap)
 
 
     ################
     # run the simulation
     ###############
 
-    st="DSx_FP_b_" * to_string(beta) *"_U_"* to_string(U) *"_L$(L)_B_$(Int(peierls))_sw$(sweeps)_th$(therm)_worker_$(worker).jld2";
+    st="D_IsX_b_" * to_string(beta) *"_U_"* to_string(U) *"_L$(L)_B_$(Int(peierls))_sw$(sweeps)_th$(therm)_worker_$(worker).jld2";
     resumable_file=path* "/resumable_" *st;
     final_file=path * "/" * st;
 

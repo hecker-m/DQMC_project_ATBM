@@ -87,13 +87,13 @@ for _para in eachindex(paras)
     println("done with set $(_para)a")
     vec=[L, T, U, Int(peierls)]
     for ν in [2, 3, 6, 7, 10, 11]
-        append!(vec, [mean(my_values[ν]), std_error(my_values[ν], 2^(my_lvl-1))])
+        append!(vec, [mean(my_values[ν]), std_error(my_values[ν], 2^(my_lvl))])
     end
     push!(df_ϕ, vec)
 
     vec_OP=[L, T, U, Int(peierls)]
     for ν in [1, 5, 9]
-        append!(vec_OP, [mean(my_values[ν]), std_error(my_values[ν], 2^(my_lvl-1))])
+        append!(vec_OP, [mean(my_values[ν]), std_error(my_values[ν], 2^(my_lvl))])
     end
     push!(df_ϕ_OP, vec_OP)
     end

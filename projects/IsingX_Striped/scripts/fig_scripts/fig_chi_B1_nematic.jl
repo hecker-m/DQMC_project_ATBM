@@ -123,7 +123,7 @@ for (idx, (Ts, Ls)) in enumerate(zip(df_LT[:,:T],df_LT[:,:L]))
             marker = '□', color = colorschemes[:coolwarm][1-1/Ts/βmax],  markersize=15) 
 
 end
-axislegend( position=(0, 1))
+#axislegend( position=(0, 1))
 
 ################
 ## B1 nematic order parameter 
