@@ -4,6 +4,7 @@ using Distributions, DataFrames, JLD2, Dates, Plots, LinearAlgebra, CSV
 include("../../../../src/Analysis_Fcns/analysis_fcns.jl")
 include("../../../../src/Analysis_Fcns/load_fcns.jl")
 include("../../../../src/Analysis_Fcns/analysis_fcns_phi.jl")
+include("../../../../src/Analysis_Fcns/statistics.jl")
 
 
 Us=[0.6, 0.7, 0.8, 1.0, 1.2, 1.3]
@@ -51,9 +52,30 @@ end
 df_ϕ_OP= DataFrame(df_ϕ_OP_cols)
 
 #######
+## initialize DataFrame for
+## Binder cumulant measurements
+#######
+Binder_keys=[(key=:Binder_magnetic , numbers=(2, 4) ), ]
+
+if length(Binder_keys)>0
+    df_Binder_cols=(L=Int[], T=Float64[], U=Float64[], B=Int[]);
+    for n in eachindex(Binder_keys)
+        name=string(Binder_keys[n].key) ;
+        Δname="Δ" *string(Binder_keys[n].key);
+        global df_Binder_cols=Base.setindex(df_Binder_cols, Float64[], Symbol(name))
+        global df_Binder_cols=Base.setindex(df_Binder_cols, Float64[], Symbol(Δname))
+    end
+    df_Binder= DataFrame(df_Binder_cols)
+end
+
+
+#######
 ## load all data and evaluate it
 #######
 my_lvl=7;
+binner_length=50
+tot_sweeps=2^13;rec_rate=20;
+println("bin length $(binner_length) gives $(div(tot_sweeps, rec_rate)/binner_length) bins per walker.")
 therm = 1000
 for _para in eachindex(paras)
     L=paras[_para].L;
@@ -79,20 +101,33 @@ for _para in eachindex(paras)
     ## Computing the mean and std_errors of all observables 
     ## specified in my_keys, and pushing them into the DataFrame
     ############
-    my_values=get_observable_using_ϕ(dqmcs,  Val(:Qππ))
+    global my_values=get_observable_using_ϕ(dqmcs,  Val(:Qππ))
     println("done with set $(_para)a")
     vec=[L, T, U, Int(peierls)]
     for ν in [2, 3]
-        append!(vec, [mean(my_values[ν]), std_error(my_values[ν], 2^(my_lvl-1))])
+        append!(vec, [mean(my_values[ν]), std_error(my_values[ν], binner_length)])
     end
     push!(df_ϕ, vec)
 
     vec_OP=[L, T, U, Int(peierls)]
     for ν in [1,]
-        append!(vec_OP, [mean(my_values[ν]), std_error(my_values[ν], 2^(my_lvl-1))])
+        append!(vec_OP, [mean(my_values[ν]), std_error(my_values[ν], binner_length)])
     end
     push!(df_ϕ_OP, vec_OP)
+
+    if length(Binder_keys)>0
+        vec_Binder=[L, T, U, Int(peierls)]
+        for n in eachindex(Binder_keys)
+            _Binder_key=Binder_keys[n].key
+            _S=Binder_keys[n].numbers[1]
+            _S2=Binder_keys[n].numbers[2]
+
+            μ_Binder, Δ_JackKnife_Binder = calculate_Binder(my_values[_S].x , my_values[_S2].x , binner_length)
+            append!(vec_Binder, [μ_Binder, Δ_JackKnife_Binder])
+        end
+        push!(df_Binder, vec_Binder)
     end
+    end #end of @time
 
 end
 

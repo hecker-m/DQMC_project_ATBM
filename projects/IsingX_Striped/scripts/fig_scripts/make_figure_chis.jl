@@ -25,20 +25,21 @@ peierls=true;
 er_lw=1.2;
 βmax=20;
 
-include(p_input * "fig_chi_charge.jl")
+# include(p_input * "fig_chi_charge.jl")
 
-include(p_input * "fig_chi_pair.jl")
-#TODO: Sc order parameter
+# include(p_input * "fig_chi_pair.jl")
+# #TODO: Sc order parameter
 
-include(p_input * "fig_chi_spin.jl")
-#TODO: Magnetic order parameter
+# include(p_input * "fig_chi_spin.jl")
+# #TODO: Magnetic order parameter
 
- include(p_input * "fig_chi_B1_nematic.jl")
+#  include(p_input * "fig_chi_B1_nematic.jl")
 
-include(p_input * "fig_chi_A1p_bilinear.jl")
+# include(p_input * "fig_chi_A1p_bilinear.jl")
 
-include(p_input * "fig_chi_B1p_bilinear.jl")
+# include(p_input * "fig_chi_B1p_bilinear.jl")
+
+#include(p_input * "fig_magn_Binder.jl")
 
 
-
-
+include(p_input * "fig_tests.jl")

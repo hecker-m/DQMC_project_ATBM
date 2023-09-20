@@ -25,13 +25,13 @@ peierls=true;
 er_lw=1.2;
 βmax=30;
 
-include(p_input * "fig_chi_charge.jl")
+# include(p_input * "fig_chi_charge.jl")
 
-include(p_input * "fig_chi_pair.jl")
+# include(p_input * "fig_chi_pair.jl")
 
-include(p_input * "fig_chi_spin.jl")
+# include(p_input * "fig_chi_spin.jl")
 
-
+include(p_input * "fig_magn_Binder.jl")
 
 
 

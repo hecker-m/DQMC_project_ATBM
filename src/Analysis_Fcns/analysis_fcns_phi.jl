@@ -81,12 +81,12 @@ function calc_observables!(binner_array::Array, mc ::DQMC, ϕ_field::Array, ::Va
     end
     ## #1 is the magnetic order parameter ⟨ |̄ϕ| ⟩
     push!(binner_array[1], mean(ϕQ3_OP))
-    ## #2 is the magnetic structure factor (1/(2U)) *∑_ζ ⟨(1/Nτ)∑_ℓ ϕ²(ℓ) -1/(N*δτ)⟩
-    push!(binner_array[2], mean(ΦA1) -Nϕ/(2U)  /(N*δτ))
+    ## #2 is the magnetic structure factor S_spin = (1/(2U)) *∑_ζ ⟨(1/Nτ)∑_ℓ ϕ²(ℓ) -1/(N*δτ)⟩
+    push!(binner_array[2], mean(ΦA1) -Nϕ/(2U*N*δτ))
     ## #3 is the magnetic susceptibility (1/(2U)) *∑_ζ ⟨β  ̄ϕ²  -1/(N)⟩
     push!(binner_array[3], 1/(2U) *(β*sum(ϕQ3_bar[:] .^2) - Nϕ /(N)))
-    ## #4 for the Binder cumulant, we also need ⟨ [ϕ(0)⋅ϕ(0)]² ⟩ = ⟨ ΦA1² ⟩
-    push!(binner_array[4], mean(ΦA1 .^2)  ) 
+    ## #4 for the Binder cumulant, we also need S_spin^{(2)} = … = ⟨ [ϕ(0)⋅ϕ(0)]² ⟩ = ⟨ ΦA1² ⟩
+    push!(binner_array[4], mean(ΦA1 .^2)  - (2+Nϕ)/(N*U*δτ) * mean(ΦA1) + Nϕ*(2+Nϕ)/(4*δτ^2*N^2 *U^2)  ) 
   
 end
 
@@ -142,16 +142,16 @@ function calc_observables!(binner_array::Array, mc ::DQMC, ϕ_field::Array, ::Va
     end
     ## #1 is the magnetic order parameter ⟨ |̄ϕ| ⟩ /sqrt(2U)
     push!(binner_array[1], mean(ϕQ1Q2_OP)/sqrt(2U))
-    ## #2 is the magnetic structure factor (1/(2U)) *∑_ζ ⟨(1/Nτ)∑_ℓ ϕ²(ℓ) -1/(N*δτ)⟩
-    push!(binner_array[2], mean(ΦA1) -2Nϕ/(2U)  /(N*δτ) )
+    ## #2 is the magnetic structure factor S_spin = ΦA1(0) -Nϕ /(N*U*δτ)   =(1/(2U)) *∑_ζ ⟨(1/Nτ)∑_ℓ ϕ²(ℓ) -1/(N*δτ)⟩
+    push!(binner_array[2], mean(ΦA1) -Nϕ/(N*U*δτ) )
     ## #3 is the magnetic susceptibility (1/(2U)) *∑_ζ ⟨β  ̄ϕ²  -1/(N)⟩
     push!(binner_array[3], 1/(2U) *(β* sum(ϕQ1Q2_bar .^2) - 2Nϕ /(N)))
-    ## #4 for the Binder cumulant, we also need ⟨ [ϕ(0)⋅ϕ(0)]² ⟩ = ⟨ ΦA1² ⟩
-    push!(binner_array[4], mean(ΦA1 .^2)  )
+    ## #4 for the Binder cumulant, we also need S_spin^{(2)} = … = ⟨ [ϕ(0)⋅ϕ(0)]² ⟩ = ⟨ ΦA1² ⟩
+    push!(binner_array[4], mean(ΦA1 .^2)  - 2*(1+Nϕ)/(N*U*δτ) * mean(ΦA1) + Nϕ*(1+Nϕ)/(δτ^2*N^2 *U^2))
 
     ## #5 is the nematic order parameter ⟨ |ΦB1| ⟩
     push!(binner_array[5], mean(abs.(ΦB1)))    
-    ## #6 is the nematic structure factor ⟨ ΦB1²(0) ⟩
+    ## #6 is the nematic structure factor S_{nem}^{B₁} = …  = ⟨ ΦB1²(0) ⟩
     push!(binner_array[6], mean(ΦB1 .^2) - 2/(N*U*δτ) * mean(ΦA1) + Nϕ/(δτ^2*N^2 *U^2))
     ## #7 is the nematic susceptibility β*1/(Nτ²)∑_{ℓ,ℓ′} ⟨ ΦB1(ℓ) ΦB1(ℓ′)⟩  ± …
     push!(binner_array[7], β*mean(ΦB1)^2 - 2/(N*U) * mean(ΦA1) + Nϕ/(δτ*N^2 *U^2))    
