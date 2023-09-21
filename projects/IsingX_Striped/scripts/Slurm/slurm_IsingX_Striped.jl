@@ -42,12 +42,27 @@ peierls=paras[jobid].Pe;
 N=L^2;
 T=1/beta
 
-t=1.0;δ=0.4*t;μ0=-2*t;
+t=1.0;
+t1a=0.6*t;
+t1b=0.2*t;
+tpa=0.8*t;
+tpb=1.0*t;
+μ0=1.0*t;
+ϵ0=0.1;
+ϵB1Plus=ϵ0*t1a;
+ϵB1Minus=ϵ0*t1b;
+
+
 
 @show nworkers=parse(Int, ENV["SLURM_CPUS_PER_TASK"])
 
-path=pwd() * "/run_saves/D_L$(L)_b_" * to_string(beta) * "_U_" * to_string(U) * "_B_$(Int(peierls))";
+path1=pwd() * "/run_saves/eps_$(Int(100ϵ0))pc";
+path=path1 * "/D_L$(L)_b_" * to_string(beta) * "_U_" * to_string(U) * "_eps_$(Int(100ϵ0))pc_B_$(Int(peierls))";
+
 sleep(2jobid)
+if !isdir(path1)
+    mkdir(path1)
+end
 if !isdir(path)
     mkdir(path)
 end
@@ -67,7 +82,11 @@ end
         else
             suffix=""; #by default we use the symmetry-optimized Ising field
         end
-        schedule=SimpleScheduler(LocalSweep())
+        schedule=SimpleScheduler(LocalSweep(),PartialGlobalFlip(0.2, 0, 10), LocalSweep(8),
+            LocalSweep(),SpatialStaggeredFlip(0.2, 2, 10), LocalSweep(8),
+            LocalSweep(),pGlobalXorYshift(0.2, 4, 10), LocalSweep(8),
+            LocalSweep(),AddStaggeredConfiguration(0.2, 6, 10), LocalSweep(8),
+            LocalSweep(),LinWeightedFlip(0.2, 8, 10), LocalSweep(8))
     else
         prefix="Cont";suffix="";
         schedule=SimpleScheduler(GlobalConstMove(1), LocalSweep(5))
@@ -77,8 +96,8 @@ end
     #######
     #Initializing the Model, and the DQMC Simulation
     #######
-    model = TwoBandModel(dims=2, L=L, U = U/Nϕ, tx = [0.6; 0.2], ty = [0.6; 0.2],
-        tp = [0.8; 1.0], μs = [1.0;-1.0], peierls=peierls)
+    model = TwoBandModel(dims=2, L=L, U = U/Nϕ, tx = [t1a +ϵB1Plus; t1b +ϵB1Minus], ty = [t1a -ϵB1Plus; t1b -ϵB1Minus],
+        tp = [tpa; tpb], μs = [μ0; -μ0], peierls=peierls)
 
 
     mc = DQMC(model, field=getfield(Main, field), Nϕ=Nϕ, beta=beta, scheduler = schedule,
@@ -171,7 +190,7 @@ end
     # run the simulation
     ###############
 
-    st="D_IsX_b_" * to_string(beta) *"_U_"* to_string(U) *"_L$(L)_B_$(Int(peierls))_sw$(sweeps)_th$(therm)_worker_$(worker).jld2";
+    st="D_IsX_b_" * to_string(beta) *"_U_"* to_string(U) *"_L$(L)_eps_$(Int(100ϵ0))pc_B_$(Int(peierls))_sw$(sweeps)_th$(therm)_worker_$(worker).jld2";
     resumable_file=path* "/resumable_" *st;
     final_file=path * "/" * st;
 

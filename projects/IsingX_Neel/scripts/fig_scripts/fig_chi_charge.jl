@@ -7,7 +7,7 @@ top=Axis(fig[1, 1], xlabel=L"$U/t$", ylabel=L"$χ_{\mathrm{charge}} $", ylabelsi
 
 CairoMakie.translate!(vlines!(top, [1.0/3, 0.7, 1], color = :gray, linewidth=0.2), 0, 0, -0.8)
 CairoMakie.translate!(hlines!(top, [0.2,0.3, 0.4], color = :gray,linewidth=0.2), 0, 0, -0.8)
-χc_ref = FileIO.load(joinpath(p, "ScreenShots/screenshot_chi_c2.png"))
+χc_ref = FileIO.load(joinpath(p_screenshot, "ScreenShots/screenshot_chi_c2.png"))
 ip = image!(top, 0..3.05, -0.03..0.55, χc_ref'[:, end:-1:1],transparency=true)
 
 for (idx, (Ts, Ls)) in enumerate(zip(df_LT[:,:T],df_LT[:,:L]))

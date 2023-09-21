@@ -44,7 +44,7 @@ fig = Figure(resolution = (800, 600))
 top=Axis(fig[1, 1], xlabel=L"$U/t$", ylabel=L"$L^{-7/4}\cdot χ_{\mathrm{spin}}^{} [\mathbf{Q}=(\pi,\pi)]$", ylabelsize=30,
     xlabelsize=30, title="B=$(Int(peierls)),  L=8")
 
-χc_ref = FileIO.load(joinpath(p, "ScreenShots/screenshot_chi_spin.png"))
+χc_ref = FileIO.load(joinpath(p_screenshot, "ScreenShots/screenshot_chi_spin.png"))
 ip = image!(top, 0.5..2.0, -6..122, χc_ref'[:, end:-1:1],transparency=true)
 CairoMakie.translate!(vlines!(top, [ 0.7, 1], color = :gray, linewidth=0.2), 0, 0, -0.8)
 CairoMakie.translate!(hlines!(top, [0.2, 0.4], color = :gray,linewidth=0.2), 0, 0, -0.8)
@@ -74,7 +74,7 @@ fig = Figure(resolution = (800, 600))
 top=Axis(fig[1, 1], xlabel=L"$U/t$", ylabel=L"$L^{-7/4}\cdot χ_{\mathrm{spin}}^{} [\mathbf{Q}=(\pi,\pi)]$", ylabelsize=30,
     xlabelsize=30, title="B=$(Int(peierls)),  L=8")
 
-χc_ref = FileIO.load(joinpath(p, "ScreenShots/screenshot_chi_spin_b20.png"))
+χc_ref = FileIO.load(joinpath(p_screenshot, "ScreenShots/screenshot_chi_spin_b20.png"))
 ip = image!(top, 0.5..2.0, -8..170, χc_ref'[:, end:-1:1],transparency=true)
 CairoMakie.translate!(vlines!(top, [ 0.7, 1], color = :gray, linewidth=0.2), 0, 0, -0.8)
 CairoMakie.translate!(hlines!(top, [0.2, 0.4], color = :gray,linewidth=0.2), 0, 0, -0.8)
