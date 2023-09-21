@@ -39,7 +39,7 @@ er_lw=1.2;
 
 # include(p_input * "fig_chi_B1p_bilinear.jl")
 
-#include(p_input * "fig_magn_Binder.jl")
+include(p_input * "fig_magn_Binder.jl")
 
 
-include(p_input * "fig_tests.jl")
+#include(p_input * "fig_tests.jl")

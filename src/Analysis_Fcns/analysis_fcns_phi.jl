@@ -155,8 +155,10 @@ function calc_observables!(binner_array::Array, mc ::DQMC, ϕ_field::Array, ::Va
     push!(binner_array[6], mean(ΦB1 .^2) - 2/(N*U*δτ) * mean(ΦA1) + Nϕ/(δτ^2*N^2 *U^2))
     ## #7 is the nematic susceptibility β*1/(Nτ²)∑_{ℓ,ℓ′} ⟨ ΦB1(ℓ) ΦB1(ℓ′)⟩  ± …
     push!(binner_array[7], β*mean(ΦB1)^2 - 2/(N*U) * mean(ΦA1) + Nϕ/(δτ*N^2 *U^2))    
-    ## #8 for the Binder cumulant, we also need  ⟨ ΦB1⁴ ⟩
-    push!(binner_array[8], mean(ΦB1 .^4)  )
+    ## #8 for the Binder cumulant, we also need  S_{nem}^{(2),B₁} = …  = ⟨ ΦB1⁴ ⟩
+    push!(binner_array[8], mean(ΦB1 .^4)  -12/(N* δτ *U ) *mean(ΦB1 .* ΦB1 .* ΦA1) +
+        6*(Nϕ +4 )/(N^2* δτ^2 *U^2 ) *mean(ΦB1 .* ΦB1) + 12/(N^2* δτ^2 *U^2 ) *mean(ΦA1 .* ΦA1) -
+        12*(Nϕ +2 )/(N^3* δτ^3 *U^3 ) *mean(ΦA1) + 3Nϕ*(Nϕ +2 )/(N^4* δτ^4 *U^4 ))
 
     ## #9 is the A1′ bilinear order parameter ⟨ |ΦA1′| ⟩
     push!(binner_array[9], mean(abs.(ΦA1p)))    

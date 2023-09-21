@@ -60,7 +60,7 @@ df_ϕ_OP= DataFrame(df_ϕ_OP_cols)
 ## initialize DataFrame for
 ## Binder cumulant measurements
 #######
-Binder_keys=[(key=:Binder_magnetic , numbers=(2, 4) ), ]
+Binder_keys=[(key=:Binder_magnetic , numbers=(2, 4) ), (key=:Binder_nematic , numbers=(6, 8) )]
 
 if length(Binder_keys)>0
     df_Binder_cols=(L=Int[], T=Float64[], U=Float64[], B=Int[]);
