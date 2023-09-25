@@ -97,18 +97,18 @@ kwargs are _recorder=true, _th_meas=true, _meas=true from my_load(data["MC"], Va
 function _load(dqmcs::Array, L::Int, T::Real, beta::Real, U::Real, peierls::Bool, 
      therm::Int, sweeps::Int, N_worker::Int, beta_bool::Bool, jobid::Int=0; 
     path="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/Reprod_Fernandes_Paper/run_saves/", 
-    prefix_folder="", prefix_file="FP_", kwargs...)
+    prefix_folder="", prefix_file="FP_", eps="", kwargs...)
     
     beta_bool ? tempstring="b_" * to_string(beta) : tempstring="T_" * to_string(T)
 
     n_workers=0;
     for worker =1:N_worker
-        _path=path * prefix_folder * "L$(L)_" * tempstring * "_U_" * to_string(U) * "_B_$(Int(peierls))";
+        _path=path * prefix_folder * "L$(L)_" * tempstring * "_U_" * to_string(U) * eps * "_B_$(Int(peierls))";
         jobid==0 && begin _filename=prefix_file * tempstring *"_U_"* to_string(U) *
-            "_L$(L)_B_$(Int(peierls))_sw$(sweeps)_th$(therm)_worker_$(worker).jld2";
+            "_L$(L)" * eps * "_B_$(Int(peierls))_sw$(sweeps)_th$(therm)_worker_$(worker).jld2";
         end 
         jobid==0 || begin _filename=prefix_file * tempstring *"_U_"* to_string(U) *
-        "_L$(L)_B_$(Int(peierls))_sw$(sweeps)_th$(therm)_worker_$(worker)_id$(jobid).jld2";
+        "_L$(L)" * eps * "_B_$(Int(peierls))_sw$(sweeps)_th$(therm)_worker_$(worker)_id$(jobid).jld2";
         end 
 
         filename=_path * "/" * _filename;
@@ -133,13 +133,13 @@ loads the full DQMC simulation, found at the specified path.
 
 """
 function _load_full(dqmcs, L::Int, T::Float64, U::Float64, peierls::Bool, 
-    jobid::Int, therm::Int, sweeps::Int, N_worker::Int; prefix::String="FP_")
+    jobid::Int, therm::Int, sweeps::Int, N_worker::Int; prefix::String="FP_", eps="")
     for worker =1:N_worker
         path="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/" *
             "Reprod_Fernandes_Paper/run_saves/L$(L)_T_" *
-            to_string(T) * "_U_" * to_string(U) * "_B_$(Int(peierls))";
+            to_string(T) * "_U_" * to_string(U) * eps * "_B_$(Int(peierls))";
         st=prefix*"T_" * to_string(T) *"_U_"* to_string(U) *
-        "_L$(L)_B_$(Int(peierls))_sw$(sweeps)_th$(therm)_worker_$(worker)_id$(jobid).jld2";
+        "_L$(L)" * eps * "_B_$(Int(peierls))_sw$(sweeps)_th$(therm)_worker_$(worker)_id$(jobid).jld2";
         filename=path * "/" * st;
         mc=MonteCarlo.load(filename);
         push!(dqmcs, mc);

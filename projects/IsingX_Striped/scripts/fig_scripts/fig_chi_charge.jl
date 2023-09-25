@@ -4,7 +4,7 @@
 ########################
 fig = Figure(resolution = (800, 600))
 top=Axis(fig[1, 1], xlabel=L"$U/t$", ylabel=L"$χ_{\mathrm{charge}} $", ylabelsize=30,
-    xlabelsize=30, title="B=$(Int(peierls)),  L=8")
+    xlabelsize=30, title="B=$(Int(peierls)),  L=$(L_plot)")
 
 CairoMakie.translate!(vlines!(top, [1.0/3, 0.7, 1], color = :gray, linewidth=0.2), 0, 0, -0.8)
 CairoMakie.translate!(hlines!(top, [0.2,0.3, 0.4], color = :gray,linewidth=0.2), 0, 0, -0.8)

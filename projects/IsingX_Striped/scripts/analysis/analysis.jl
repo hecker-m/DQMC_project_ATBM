@@ -1,5 +1,5 @@
-include("../../../../src/MonteCarlo.jl_modified/src/MonteCarlo2.jl")
-using .MonteCarlo
+# include("../../../../src/MonteCarlo.jl_modified/src/MonteCarlo2.jl")
+# using .MonteCarlo
 using Distributions, DataFrames, JLD2, Dates, Plots, LinearAlgebra, CSV
 include("../../../../src/Analysis_Fcns/analysis_fcns.jl")
 include("../../../../src/Analysis_Fcns/load_fcns.jl")
@@ -10,6 +10,13 @@ Us=[0.4, 0.6, 0.8, 0.9, 1.0, 1.1, 1.3, 1.6, 2.0, 2.4]
 βs=[ 1, 2, 2.25, 2.5, 2.75, 3, 3.5, 4, 4.5, 5, 5.5, 6, 7, 8, 10, 20]
 paras=[(L=8, β=β0, U=U0, Pe=true) for U0 in Us, β0 in βs][:]
 
+#######
+# to save the computed dataframe
+#######
+save_bool=true;
+save_path="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/DQMC_project_ATBM/projects/IsingX_Striped/figures/dataframes/"
+my_ϵ="_eps_5pc"
+save_name="L8" * my_ϵ
 
 #######
 ## initialize DataFrame for measurements of
@@ -87,7 +94,7 @@ for _para in eachindex(paras)
 
     @time begin n_workers=_load(dqmcs, L, T, β, U, peierls, therm, sweeps, Nworker, 
         haskey(paras[_para], :β), jobid;
-        path=path, prefix_folder="D_", prefix_file="D_IsX_",
+        path=path, prefix_folder="D_", prefix_file="D_IsX_", eps= my_ϵ,
         _recorder=false, _th_meas=false, _meas=true);
     end
     n_workers != Nworker ? println("Only $(n_workers) finished for parameters $(_para) !!!!") : nothing ;
@@ -141,5 +148,8 @@ end
 #########
 ## Saving the DataFrames if necessary
 #########
-# CSV.write(joinpath(p, "dataframe.csv"), df)
-# CSV.write(joinpath(p, "dataframe_OP.csv"), df_OP)
+
+if save_bool
+    CSV.write(joinpath(save_path, "df_" * save_name * ".csv"), df)
+    CSV.write(joinpath(save_path, "df_OP_" * save_name * ".csv"), df_OP)
+end

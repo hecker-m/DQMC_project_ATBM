@@ -4,7 +4,7 @@
 ################
 fig = Figure(resolution = (800, 600))
 top=Axis(fig[1, 1], xlabel=L"$U/t$", ylabel=L"$χ_{\mathrm{charge}}^{B_1} [\mathbf{Q}=(0,0)]$", 
-    title="B=$(Int(peierls)),  L=8", xlabelsize=30, ylabelsize=30,
+    title="B=$(Int(peierls)),  L=$(L_plot)", xlabelsize=30, ylabelsize=30,
     xticklabelsize=20, yticklabelsize=20, limits= (nothing, nothing))
 
 CairoMakie.translate!(vlines!(top, [1.0/3, 0.7, 1], color = :gray, linewidth=0.2), 0, 0, -0.8)
@@ -33,7 +33,7 @@ fig = Figure(resolution = (800, 600))
 top=Axis(fig[1, 1], xlabel=L"$U/t$", ylabel=L"$χ_{\mathrm{nematic}}^{B_1} [\mathbf{Q}=(0,0)]$", 
     xlabelsize=30, ylabelsize=30,
     xticklabelsize=20, yticklabelsize=20, limits= (nothing, nothing),
-    title=L"B=%$(Int(peierls)),\;  L=8:\quad \times \;↔\;  
+    title=L"B=%$(Int(peierls)),\;  L=%$(L_plot):\quad \times \;↔\;  
     \langle \hat{c}\hat{c}.. \rangle, \qquad □ \;↔\;  \langle ϕ.. \rangle")
 
 CairoMakie.translate!(vlines!(top, [1.0/3, 0.7, 1], color = :gray, linewidth=0.2), 0, 0, -0.8)
@@ -67,7 +67,7 @@ fig = Figure(resolution = (800, 600))
 top=Axis(fig[1, 1], xlabel=L"$T/t$", ylabel=L"$χ_{\mathrm{nematic}}^{B_1} [\mathbf{Q}=(0,0)]$", 
     xlabelsize=30, ylabelsize=30,
     xticklabelsize=20, yticklabelsize=20, limits= (nothing, nothing),
-    title=L"B=%$(Int(peierls)),\;  L=8:\quad \times \;↔\;  
+    title=L"B=%$(Int(peierls)),\;  L=%$(L_plot):\quad \times \;↔\;  
     \langle \hat{c}\hat{c}.. \rangle, \qquad □ \;↔\;  \langle ϕ.. \rangle")
 
 CairoMakie.translate!(vlines!(top, [1.0/3, 0.7, 1], color = :gray, linewidth=0.2), 0, 0, -0.8)
@@ -101,7 +101,7 @@ fig = Figure(resolution = (800, 800))
 top=Axis(fig[1, 1],  ylabel=L"$\mathrm{corr:\,}S_{\mathrm{nematic}}^{B_1} [\mathbf{Q}=(0,0)]$", 
     xlabelsize=30, ylabelsize=30, xticklabelsvisible=false,
     xticklabelsize=20, yticklabelsize=20, limits= (nothing, nothing),
-    title=L"B=%$(Int(peierls)),\;  L=8:\quad \times \;↔\;  
+    title=L"B=%$(Int(peierls)),\;  L=%$(L_plot):\quad \times \;↔\;  
     \langle \hat{c}\hat{c}.. \rangle, \qquad □ \;↔\;  \langle ϕ.. \rangle")
 
 CairoMakie.translate!(vlines!(top, [1.0/3, 0.7, 1], color = :gray, linewidth=0.2), 0, 0, -0.8)
@@ -158,7 +158,7 @@ fig = Figure(resolution = (800, 800))
 top=Axis(fig[1, 1], ylabel=L"$\mathrm{corr:\,}S_{\mathrm{nematic}}^{B_1} [\mathbf{Q}=(0,0)]$", 
     xlabelsize=30, ylabelsize=30,xticklabelsvisible=false,
     xticklabelsize=20, yticklabelsize=20, limits= (nothing, nothing),
-    title=L"B=%$(Int(peierls)),\;  L=8:\quad \times \;↔\;  
+    title=L"B=%$(Int(peierls)),\;  L=%$(L_plot):\quad \times \;↔\;  
     \langle \hat{c}\hat{c}.. \rangle, \qquad □ \;↔\;  \langle ϕ.. \rangle")
 
 CairoMakie.translate!(vlines!(top, [1.0/3, 0.7, 1], color = :gray, linewidth=0.2), 0, 0, -0.8)

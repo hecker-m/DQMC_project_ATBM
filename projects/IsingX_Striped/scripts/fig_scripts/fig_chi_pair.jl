@@ -4,7 +4,7 @@
 ########################
 fig = Figure(resolution = (800, 600))
 top=Axis(fig[1, 1], xlabel=L"$U/t$", ylabel=L"$χ_{\mathrm{pair}}^{00} [\mathbf{Q}=(0,0)]$", ylabelsize=30,
-    xlabelsize=30, title="B=$(Int(peierls)),  L=8")
+    xlabelsize=30, title="B=$(Int(peierls)),  L=$(L_plot)")
 
 CairoMakie.translate!(vlines!(top, [1.0/3, 0.7, 1], color = :gray, linewidth=0.2), 0, 0, -0.8)
 CairoMakie.translate!(hlines!(top, [0.2, 0.4], color = :gray,linewidth=0.2), 0, 0, -0.8)
@@ -29,7 +29,7 @@ CairoMakie.save(joinpath(p, "chi_pair_00_00.png"), fig)
 ########################
 fig = Figure(resolution = (800, 600))
 top=Axis(fig[1, 1], xlabel=L"$U/t$", ylabel=L"$χ_{\mathrm{pair}}^{00} [\mathbf{Q}=(π,0)]$", ylabelsize=30,
-    xlabelsize=30, xticklabelsize=20, yticklabelsize=20, title="B=$(Int(peierls)),  L=8")
+    xlabelsize=30, xticklabelsize=20, yticklabelsize=20, title="B=$(Int(peierls)),  L=$(L_plot)")
 
 CairoMakie.translate!(vlines!(top, [1.0/3, 0.7, 1], color = :gray, linewidth=0.2), 0, 0, -0.8)
 
@@ -53,7 +53,7 @@ CairoMakie.save(joinpath(p, "chi_pair_00_π0.png"), fig)
 ########################
 fig = Figure(resolution = (800, 600))
 top=Axis(fig[1, 1], xlabel=L"$U/t$", ylabel=L"$χ_{\mathrm{pair}}^{zz} [\mathbf{Q}=(0,0)]$", ylabelsize=30,
-    xlabelsize=30, xticklabelsize=20, yticklabelsize=20, title="B=$(Int(peierls)),  L=8")
+    xlabelsize=30, xticklabelsize=20, yticklabelsize=20, title="B=$(Int(peierls)),  L=$(L_plot)")
 
 CairoMakie.translate!(vlines!(top, [1.0/3, 0.7, 1], color = :gray, linewidth=0.2), 0, 0, -0.8)
 CairoMakie.translate!(hlines!(top, [0.2, 0.4], color = :gray,linewidth=0.2), 0, 0, -0.8)
@@ -78,7 +78,7 @@ CairoMakie.save(joinpath(p, "chi_pair_ZZ_00.png"), fig)
 ########################
 fig = Figure(resolution = (800, 600))
 top=Axis(fig[1, 1], xlabel=L"$U/t$", ylabel=L"$χ_{\mathrm{pair}}^{zz} [\mathbf{Q}=(π,0)]$", ylabelsize=30,
-    xlabelsize=30, xticklabelsize=20, yticklabelsize=20, title="B=$(Int(peierls)),  L=8")
+    xlabelsize=30, xticklabelsize=20, yticklabelsize=20, title="B=$(Int(peierls)),  L=$(L_plot)")
 
 CairoMakie.translate!(vlines!(top, [1.0/3, 0.7, 1], color = :gray, linewidth=0.2), 0, 0, -0.8)
 
@@ -103,7 +103,7 @@ CairoMakie.save(joinpath(p, "chi_pair_ZZ_π0.png"), fig)
 ########################
 fig = Figure(resolution = (800, 600))
 top=Axis(fig[1, 1], xlabel=L"$U/t$", ylabel=L"$χ_{\mathrm{pair}}^{xx} [\mathbf{Q}=(0,0)]$", ylabelsize=30,
-    xlabelsize=30, xticklabelsize=20, yticklabelsize=20, title="B=$(Int(peierls)),  L=8")
+    xlabelsize=30, xticklabelsize=20, yticklabelsize=20, title="B=$(Int(peierls)),  L=$(L_plot)")
 
 CairoMakie.translate!(vlines!(top, [1.0/3, 0.7, 1], color = :gray, linewidth=0.2), 0, 0, -0.8)
 CairoMakie.translate!(hlines!(top, [0.2, 0.4], color = :gray,linewidth=0.2), 0, 0, -0.8)
@@ -136,7 +136,7 @@ CairoMakie.save(joinpath(p, "chi_pair_XX.png"), fig)
 ########################
 fig = Figure(resolution = (800, 600))
 top=Axis(fig[1, 1], xlabel=L"$U/t$", ylabel=L"$χ_{\mathrm{pair}}^{YYzz} [\mathbf{Q}=(0,0)]$", ylabelsize=30,
-    xlabelsize=30, xticklabelsize=20, yticklabelsize=20, title="B=$(Int(peierls)),  L=8")
+    xlabelsize=30, xticklabelsize=20, yticklabelsize=20, title="B=$(Int(peierls)),  L=$(L_plot)")
 
 CairoMakie.translate!(vlines!(top, [1.0/3, 0.7, 1], color = :gray, linewidth=0.2), 0, 0, -0.8)
 CairoMakie.translate!(hlines!(top, [0.2, 0.4], color = :gray,linewidth=0.2), 0, 0, -0.8)
@@ -162,7 +162,7 @@ CairoMakie.save(joinpath(p, "chi_pair_YYzz_00.png"), fig)
 ########################
 fig = Figure(resolution = (800, 600))
 top=Axis(fig[1, 1], xlabel=L"$U/t$", ylabel=L"$χ_{\mathrm{pair}}^{YYzz} [\mathbf{Q}=(π,0)]$", ylabelsize=30,
-    xlabelsize=30, xticklabelsize=20, yticklabelsize=20, title="B=$(Int(peierls)),  L=8")
+    xlabelsize=30, xticklabelsize=20, yticklabelsize=20, title="B=$(Int(peierls)),  L=$(L_plot)")
 
 CairoMakie.translate!(vlines!(top, [1.0/3, 0.7, 1], color = :gray, linewidth=0.2), 0, 0, -0.8)
 CairoMakie.translate!(hlines!(top, [0.2, 0.4], color = :gray,linewidth=0.2), 0, 0, -0.8)

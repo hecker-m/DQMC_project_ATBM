@@ -5,7 +5,7 @@
 ################
 fig = Figure(resolution = (800, 600))
 top=Axis(fig[1, 1], xlabel=L"$U/t$", ylabel=L"$χ_{\mathrm{bilinear}}^{B_1^{\prime}} [\mathbf{Q}=(0,0)]$", 
-    title="B=$(Int(peierls)),  L=8", xlabelsize=30, ylabelsize=30,
+    title="B=$(Int(peierls)),  L=$(L_plot)", xlabelsize=30, ylabelsize=30,
     xticklabelsize=20, yticklabelsize=20, limits= (nothing, nothing))
 
 CairoMakie.translate!(vlines!(top, [1.0/3, 0.7, 1], color = :gray, linewidth=0.2), 0, 0, -0.8)
@@ -32,7 +32,7 @@ CairoMakie.save(joinpath(p, "chi_bilinear_B1p_00.png"), fig)
 ################
 fig = Figure(resolution = (800, 600))
 top=Axis(fig[1, 1],  xlabel= L"$U/t$", ylabel=L"$\mathrm{corr:\,}S_{\mathrm{bilinear}}^{B_1^{\prime}} [\mathbf{Q}=(0,0)]$", 
-    title="B=$(Int(peierls)),  L=8", xlabelsize=30, ylabelsize=30, 
+    title="B=$(Int(peierls)),  L=$(L_plot)", xlabelsize=30, ylabelsize=30, 
     xticklabelsize=20, yticklabelsize=20, limits= (nothing, nothing))
 
 CairoMakie.translate!(vlines!(top, [1.0/3, 0.7, 1], color = :gray, linewidth=0.2), 0, 0, -0.8)

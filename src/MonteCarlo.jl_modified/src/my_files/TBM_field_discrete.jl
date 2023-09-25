@@ -116,7 +116,7 @@ Discrete_MBF2
     XY-magnetic boson field with Nϕ=2
     Note that this is the full version, i.e. it is not symmetry-optimized.
 """
-struct Discrete_MBF2 <: AbstractDiscreteMBF #Continuous magnetic boson field with Nϕ=2
+struct Discrete_MBF2 <: AbstractDiscreteMBF #Discrete magnetic boson field with Nϕ=2
     α::Float64
     w::Vector{Float64}
     x::Vector{Float64}
@@ -137,6 +137,34 @@ function Discrete_MBF2(param::DQMCParameters, model::Model)
         Array{Int8}(undef, 2, length(lattice(model)), param.slices), 
         Vector{Int8}(undef,2))
 end
+
+"""
+Discrete_MBF2_symm
+
+    Symmetry-optimized XY-magnetic boson field with Nϕ=2
+"""
+struct Discrete_MBF2_symm <: AbstractDiscreteMBF #Discrete magnetic boson field with Nϕ=2
+    α::Float64
+    w::Vector{Float64}
+    x::Vector{Float64}
+    choices::Matrix{Vector{Int8}}
+    temp_conf::Array{Int8, 3} #stores numbers η ∈ {1,2,3,4}
+    conf::Array{Int8, 3}
+    temp_vec::Vector{Int8}
+end
+
+function Discrete_MBF2_symm(param::DQMCParameters, model::Model)
+    α = sqrt(param.delta_tau *model.U)
+    s6 = sqrt(6)
+    ws = Float64[1 - s6/3, 1 + s6/3, 1 + s6/3, 1 - s6/3]
+    xs = Float64[-sqrt(6 + 2s6), -sqrt(6 - 2s6), sqrt(6 - 2s6), sqrt(6 + 2s6)]
+    choices = [[Int8(i), Int8(j)] for i ∈ 1:4, j ∈ 1:4]
+    Discrete_MBF2_symm( α, ws, xs, choices,
+        Array{Int8}(undef, 2, length(lattice(model)), param.slices),
+        Array{Int8}(undef, 2, length(lattice(model)), param.slices), 
+        Vector{Int8}(undef,2))
+end
+
 """
 Discrete_MBF3
 

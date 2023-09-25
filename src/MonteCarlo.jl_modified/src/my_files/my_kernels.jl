@@ -2,12 +2,13 @@
 ### occupation + energy + charge-density for symmetry-optimized Discrete_MBF1
 ###########################
 @inline Base.@propagate_inbounds function occupation_kernel(i, flv, N, G::_GM{<: Matrix}, 
-    ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm})
+    ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm, Discrete_MBF2_symm})
     shift = N * (flv - 1)
     return 2 - 2real(G.val[i+shift, i+shift])
 end
-@inline Base.@propagate_inbounds function kinetic_energy_kernel(mc, model, ::Nothing, 
-    G::_GM{<: Matrix}, flv, ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm})
+@inline Base.@propagate_inbounds function kinetic_energy_kernel(mc, model, 
+    ::Nothing,  G::_GM{<: Matrix}, flv, 
+    ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm, Discrete_MBF2_symm})
     # <T> = \sum Tji * (Iij - Gij) = - \sum Tji * (Gij - Iij)
     T = mc.stack.hopping_matrix
     N = length(lattice(mc))
@@ -23,7 +24,7 @@ end
 
 @inline Base.@propagate_inbounds function full_cdc_kernel(
     mc, ::Model, ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
-    flv, ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm})
+    flv, ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm, Discrete_MBF2_symm})
     i, j = ij
     α, γ = flv
     G00, G0l, Gl0, Gll = packed_greens
@@ -121,6 +122,26 @@ end
     end
     return output * model.U
 end
+########## TODO!!!
+@inline Base.@propagate_inbounds function interaction_energy_kernel(mc, model::TwoBandModel, ::Nothing, 
+    G::_GM{<: Matrix}, flv, ::Discrete_MBF2_symm)
+    N = length(lattice(model))
+    output = zero(eltype(G.val))
+    outtmp1 = zero(eltype(G.val))
+    outtmp2 = zero(eltype(G.val))
+    @inbounds @fastmath for i in 1:N
+        outtmp1=4*(G.val[i, i+3N]+G.val[i+2N, i+N])*
+            (G.val[i+N, i+2N]+G.val[i+3N, i]);  
+            
+        outtmp2=2*G.val[i, i]+2*(1-2*G.val[i,i])*G.val[i+3N, i+3N]+            
+            2*G.val[i+N, i+N]+2*(1-2*G.val[i+N,i+N])*G.val[i+2N, i+2N]-
+            4*G.val[i, i+2N]*G.val[i+N, i+3N]-
+            4*G.val[i+2N, i]*G.val[i+3N, i+N];
+
+        output-=outtmp1+outtmp2
+    end
+    return output * model.U
+end
 ###
 @inline Base.@propagate_inbounds function interaction_energy_kernel(mc, model::TwoBandModel, ::Nothing, 
         G::_GM{<: Matrix}, flv, ::Union{Cont_MBF3, Discrete_MBF3})
@@ -172,6 +193,7 @@ end
     return -G.val[i, i+2N]-G.val[i+2N, i]+ 
         G.val[i+N, i+3N]+G.val[i+3N, i+N]
 end
+########## TODO!!!
 @inline Base.@propagate_inbounds function Mx_z_kernel(mc, model::TwoBandModel, i, G::_GM{<: Matrix}, 
     flv, ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm})
     N = length(lattice(model))
@@ -203,7 +225,7 @@ end
     G.val[i + 3N, i]
 end
 @inline Base.@propagate_inbounds function Mx_x_kernel(mc, model::TwoBandModel, i, G::_GM{<: Matrix}, 
-    flv, ::Discrete_MBF1_X_symm)
+    flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
     N = length(lattice(model))
     return -2*real(G.val[i, i+N]+G.val[i+N, i])
    

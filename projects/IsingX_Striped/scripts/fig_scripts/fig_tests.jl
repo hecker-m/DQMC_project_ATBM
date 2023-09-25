@@ -7,7 +7,7 @@ fig = Figure(resolution = (800, 600))
 top=Axis(fig[1, 1], xlabel=L"$χ_{\mathrm{spin}}^{} [\mathbf{Q}=(0,\pi)] +
     χ_{\mathrm{spin}}^{} [\mathbf{Q}=(\pi,0)]$", 
     ylabel=L"$χ_{\mathrm{nematic}}^{B_1} [\mathbf{Q}=(0,0)]$", ylabelsize=30,
-    xlabelsize=30,     title=L"B=%$(Int(peierls)),\;  L=8:\quad \times \;↔\;  
+    xlabelsize=30,     title=L"B=%$(Int(peierls)),\;  L=%$(L_plot):\quad \times \;↔\;  
     \langle \hat{c}\hat{c}.. \rangle, \qquad □ \;↔\;  \langle ϕ.. \rangle")
 
 CairoMakie.translate!(vlines!(top, [ 0.7, 1], color = :gray, linewidth=0.2), 0, 0, -0.8)
@@ -48,7 +48,7 @@ fig = Figure(resolution = (800, 600))
 top=Axis(fig[1, 1], xlabel=L"$χ_{\mathrm{spin}}^{} [\mathbf{Q}=(0,\pi)] +
     χ_{\mathrm{spin}}^{} [\mathbf{Q}=(\pi,0)]$", 
     ylabel=L"$χ_{\mathrm{nematic}}^{B_1} [\mathbf{Q}=(0,0)]$", ylabelsize=30,
-    xlabelsize=30,     title=L"B=%$(Int(peierls)),\;  L=8:\quad \times \;↔\;  
+    xlabelsize=30,     title=L"B=%$(Int(peierls)),\;  L=%$(L_plot):\quad \times \;↔\;  
     \langle \hat{c}\hat{c}.. \rangle, \qquad □ \;↔\;  \langle ϕ.. \rangle", 
     limits=((0,30), (0,80)))
 

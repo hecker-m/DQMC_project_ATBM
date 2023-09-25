@@ -28,5 +28,13 @@ Manifest.toml
 *.code-workspace
 #specific files
 projects/IsingX_Neel/figures/older_figures/*
+projects/IsingX_Neel/figures/dataframes/*
+
 projects/IsingX_Striped/figures/older_figures/*
+projects/IsingX_Striped/figures/dataframes/*
+
 projects/Heisenberg_Striped/figures/older_figures/*
+projects/Heisenberg_Striped/figures/dataframes/*
+
+projects/XY_Model_Striped/figures/older_figures/*
+projects/XY_Model_Striped/figures/dataframes/*

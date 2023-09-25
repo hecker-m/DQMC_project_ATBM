@@ -149,10 +149,11 @@ function __init__()
     return nothing
 end
 include("my_files/my_linalg.jl")
+include("my_files/helpful_fcns.jl")
 include("my_files/TwoBandModel_import.jl")
 include("my_files/TBM_field_import.jl")
 include("my_files/TBM_field_discrete.jl")
-include("my_files/TBM_Ising_field.jl")
+include("my_files/TBM_symm_field.jl")
 include("my_files/measurements/spectral_weight_proxy.jl")
 include("my_files/my_kernels.jl")
 include("my_files/measurements/nematic_susceptibility.jl")
@@ -164,7 +165,7 @@ include("my_files/measurements/order_parameters.jl")
 include("my_files/my_updates.jl")
 export GlobalConstMove, SpatialStaggeredFlip, SpatialStripedXorYFlip, PartialGlobalFlip, pGlobalXorYshift, AddShiftedConfiguration, AddStaggeredConfiguration, LinWeightedStaggFlip, LinWeightedFlip
 
-export TwoBandModel, hopping_matrix, AbstractMagnBosonField, AbstractContMBF, Cont_MBF1, Cont_MBF2, Cont_MBF3, AbstractDiscreteMBF, Discrete_MBF1, Discrete_MBF1_symm, Discrete_MBF1_X, Discrete_MBF1_X_symm,  Discrete_MBF2, Discrete_MBF3, _zero!
+export TwoBandModel, hopping_matrix, AbstractMagnBosonField, AbstractContMBF, Cont_MBF1, Cont_MBF2, Cont_MBF3, AbstractDiscreteMBF, Discrete_MBF1, Discrete_MBF1_symm, Discrete_MBF1_X, Discrete_MBF1_X_symm,  Discrete_MBF2, Discrete_MBF2_symm, Discrete_MBF3, _zero!
 export EachDoubleSitePairByDistance, nematic_measurement, nematic_correlation, nematic_susceptibility, full_nem_kernel
 export EachDoubleSitePairByDistance_Q1Q2, A1_Q1Q2_measurement, A1_Q1Q2_correlation, A1_Q1Q2_susceptibility, full_A1_Q1Q2_kernel
 export EachSitePair_B1, B1_charge_density_measurement, B1_charge_density_correlation, B1_charge_density_susceptibility, full_B1_charge_density_kernel
