@@ -6,6 +6,7 @@
     shift = N * (flv - 1)
     return 2 - 2real(G.val[i+shift, i+shift])
 end
+
 @inline Base.@propagate_inbounds function kinetic_energy_kernel(mc, model, 
     ::Nothing,  G::_GM{<: Matrix}, flv, 
     ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm, Discrete_MBF2_symm})
@@ -20,7 +21,6 @@ end
     end
     output
 end
-
 
 @inline Base.@propagate_inbounds function full_cdc_kernel(
     mc, ::Model, ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
@@ -122,7 +122,7 @@ end
     end
     return output * model.U
 end
-########## TODO!!!
+
 @inline Base.@propagate_inbounds function interaction_energy_kernel(mc, model::TwoBandModel, ::Nothing, 
     G::_GM{<: Matrix}, flv, ::Discrete_MBF2_symm)
     N = length(lattice(model))
@@ -130,15 +130,14 @@ end
     outtmp1 = zero(eltype(G.val))
     outtmp2 = zero(eltype(G.val))
     @inbounds @fastmath for i in 1:N
-        outtmp1=4*(G.val[i, i+3N]+G.val[i+2N, i+N])*
-            (G.val[i+N, i+2N]+G.val[i+3N, i]);  
+        outtmp1=(2*real(G.val[i, i+N]+G.val[i+N, i]))^2+
+            (2*imag(G.val[i, i+N]-G.val[i+N, i]))^2;  
             
-        outtmp2=2*G.val[i, i]+2*(1-2*G.val[i,i])*G.val[i+3N, i+3N]+            
-            2*G.val[i+N, i+N]+2*(1-2*G.val[i+N,i+N])*G.val[i+2N, i+2N]-
-            4*G.val[i, i+2N]*G.val[i+N, i+3N]-
-            4*G.val[i+2N, i]*G.val[i+3N, i+N];
+        outtmp2=4*real(G.val[i, i]+G.val[i+N, i+N])-
+            8*real(G.val[i, i]*G.val[i+N, i+N]);
 
         output-=outtmp1+outtmp2
+
     end
     return output * model.U
 end
@@ -193,13 +192,14 @@ end
     return -G.val[i, i+2N]-G.val[i+2N, i]+ 
         G.val[i+N, i+3N]+G.val[i+3N, i+N]
 end
-########## TODO!!!
 @inline Base.@propagate_inbounds function Mx_z_kernel(mc, model::TwoBandModel, i, G::_GM{<: Matrix}, 
-    flv, ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm})
+    flv, ::Discrete_MBF1_symm)
     N = length(lattice(model))
     return -2*real(G.val[i, i+N]+G.val[i+N, i])
-    #Note that for the Ising-x field, the Mx_z_kernel is actually the Mx_x_kernel.
-    #Just too lazy to freshly implement.
+end
+@inline Base.@propagate_inbounds function Mx_z_kernel(mc, model::TwoBandModel, i, G::_GM{<: Matrix}, 
+    flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    return 0
 end
 
 @inline Base.@propagate_inbounds function Mx_z_kernel_old(mc, model::TwoBandModel, i, G::_GM{<: Matrix}, 
@@ -228,7 +228,6 @@ end
     flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
     N = length(lattice(model))
     return -2*real(G.val[i, i+N]+G.val[i+N, i])
-   
 end
 
 """
@@ -244,7 +243,7 @@ end
     G.val[i + 3N, i])
 end
 @inline Base.@propagate_inbounds function Mx_y_kernel(mc, model::TwoBandModel, i, G::_GM{<: Matrix}, 
-    flv, ::Discrete_MBF1_X_symm)
+    flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
     N = length(lattice(model))
     return 2*imag(G.val[i, i+N]-G.val[i+N, i])
    
@@ -268,29 +267,29 @@ end
 @inline Base.@propagate_inbounds function full_sdc_Mx_z_kernel(
     mc, model::TwoBandModel, ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
     flv, ::Discrete_MBF1_symm)
-i, j = ij   #we treat j as j=0
-G00, G0l, Gl0, Gll = packed_greens
-N = length(lattice(model))
-id = I[i, j] * I[G0l.k, G0l.l] 
+    i, j = ij   #we treat j as j=0
+    G00, G0l, Gl0, Gll = packed_greens
+    N = length(lattice(model))
+    id = I[i, j] * I[G0l.k, G0l.l] 
 
-4*real(G00.val[j, j+N]+G00.val[j+N, j]) *real(Gll.val[i, i+N]+Gll.val[i+N, i])+
-2*real((id-G0l.val[j+N, i+N]) * Gl0.val[i, j])+
-2*real((id-G0l.val[j, i]) * Gl0.val[i+N, j+N])-
-2*real(G0l.val[j, i+N]*Gl0.val[i, j+N])-
-2*real(G0l.val[j+N, i]*Gl0.val[i+N, j])
+    4*real(G00.val[j, j+N]+G00.val[j+N, j]) *real(Gll.val[i, i+N]+Gll.val[i+N, i])+
+    2*real((id-G0l.val[j+N, i+N]) * Gl0.val[i, j])+
+    2*real((id-G0l.val[j, i]) * Gl0.val[i+N, j+N])-
+    2*real(G0l.val[j, i+N]*Gl0.val[i, j+N])-
+    2*real(G0l.val[j+N, i]*Gl0.val[i+N, j])
 end
 @inline Base.@propagate_inbounds function full_sdc_Mx_z_kernel(
-    mc, model::TwoBandModel, ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, flv, ::Discrete_MBF1_X_symm
-    )
-i, j = ij   #we treat j as j=0
-G00, G0l, Gl0, Gll = packed_greens
-N = length(lattice(model))
-id = I[i, j] * I[G0l.k, G0l.l] 
+    mc, model::TwoBandModel, ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
+    flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    i, j = ij   #we treat j as j=0
+    G00, G0l, Gl0, Gll = packed_greens
+    N = length(lattice(model))
+    id = I[i, j] * I[G0l.k, G0l.l] 
 
-2*real((id-G0l.val[j, i]) * conj(Gl0.val[i+N, j+N]))+
-2*real((id-G0l.val[j+N, i+N]) * conj(Gl0.val[i, j]))+
-2*real(G0l.val[j, i+N] * conj(Gl0.val[i, j+N]))+
-2*real(G0l.val[j+N, i] * conj(Gl0.val[i+N, j]))
+    2*real((id-G0l.val[j, i]) * conj(Gl0.val[i+N, j+N]))+
+    2*real((id-G0l.val[j+N, i+N]) * conj(Gl0.val[i, j]))+
+    2*real(G0l.val[j, i+N] * conj(Gl0.val[i, j+N]))+
+    2*real(G0l.val[j+N, i] * conj(Gl0.val[i+N, j]))
 end
 
 
@@ -381,36 +380,36 @@ end
 end
 
 @inline Base.@propagate_inbounds function full_sdc_Mx_x_kernel(
-    mc, model::TwoBandModel, ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, flv, ::Discrete_MBF1_symm
-    )
-i, j = ij   #we treat j as j=0
-G00, G0l, Gl0, Gll = packed_greens
-N = length(lattice(model))
-id = I[i, j] * I[G0l.k, G0l.l] 
+    mc, model::TwoBandModel, ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
+    flv, ::Discrete_MBF1_symm)
+    i, j = ij   #we treat j as j=0
+    G00, G0l, Gl0, Gll = packed_greens
+    N = length(lattice(model))
+    id = I[i, j] * I[G0l.k, G0l.l] 
 
-2*real((id-G0l.val[j, i]) * conj(Gl0.val[i+N, j+N]))+
-2*real((id-G0l.val[j+N, i+N]) * conj(Gl0.val[i, j]))+
-2*real(G0l.val[j, i+N] * conj(Gl0.val[i, j+N]))+
-2*real(G0l.val[j+N, i] * conj(Gl0.val[i+N, j]))
+    2*real((id-G0l.val[j, i]) * conj(Gl0.val[i+N, j+N]))+
+    2*real((id-G0l.val[j+N, i+N]) * conj(Gl0.val[i, j]))+
+    2*real(G0l.val[j, i+N] * conj(Gl0.val[i, j+N]))+
+    2*real(G0l.val[j+N, i] * conj(Gl0.val[i+N, j]))
 end
 @inline Base.@propagate_inbounds function full_sdc_Mx_x_kernel(
     mc, model::TwoBandModel, ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
-    flv, ::Discrete_MBF1_X_symm)
-i, j = ij   #we treat j as j=0
-G00, G0l, Gl0, Gll = packed_greens
-N = length(lattice(model))
-id = I[i, j] * I[G0l.k, G0l.l] 
+    flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    i, j = ij   #we treat j as j=0
+    G00, G0l, Gl0, Gll = packed_greens
+    N = length(lattice(model))
+    id = I[i, j] * I[G0l.k, G0l.l] 
 
-4*real(G00.val[j, j+N]+G00.val[j+N, j]) *real(Gll.val[i, i+N]+Gll.val[i+N, i])+
-2*real((id-G0l.val[j+N, i+N]) * Gl0.val[i, j])+
-2*real((id-G0l.val[j, i]) * Gl0.val[i+N, j+N])-
-2*real(G0l.val[j, i+N]*Gl0.val[i, j+N])-
-2*real(G0l.val[j+N, i]*Gl0.val[i+N, j])
+    4*real(G00.val[j, j+N]+G00.val[j+N, j]) *real(Gll.val[i, i+N]+Gll.val[i+N, i])+
+    2*real((id-G0l.val[j+N, i+N]) * Gl0.val[i, j])+
+    2*real((id-G0l.val[j, i]) * Gl0.val[i+N, j+N])-
+    2*real(G0l.val[j, i+N]*Gl0.val[i, j+N])-
+    2*real(G0l.val[j+N, i]*Gl0.val[i+N, j])
 end
 
 @inline Base.@propagate_inbounds function full_sdc_Mx_x_kernel(
-        mc, model::TwoBandModel, ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, flv, ::AbstractMagnBosonField
-    )
+        mc, model::TwoBandModel, ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
+        flv, ::AbstractMagnBosonField )
     i, j = ij   #we treat j as j=0
 	G00, G0l, Gl0, Gll = packed_greens
     N = length(lattice(model))
@@ -447,36 +446,36 @@ end
     return full_sdc_Mx_y_kernel(mc, model, ij, (G, G, G, G), flv, field)
 end
 @inline Base.@propagate_inbounds function full_sdc_Mx_y_kernel(
-    mc, model::TwoBandModel, ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, flv, ::AbstractMagnBosonField
-)
-i, j = ij   #we treat j as j=0
-G00, G0l, Gl0, Gll = packed_greens
-N = length(lattice(model))
-id = I[i, j] * I[G0l.k, G0l.l] 
+    mc, model::TwoBandModel, ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
+    flv, ::AbstractMagnBosonField)
+    i, j = ij   #we treat j as j=0
+    G00, G0l, Gl0, Gll = packed_greens
+    N = length(lattice(model))
+    id = I[i, j] * I[G0l.k, G0l.l] 
 
--(G00.val[j, j+3N]-G00.val[j+N, j+2N]+ G00.val[j+2N, j+N]-G00.val[j+3N, j])*
-(Gll.val[i, i+3N]-Gll.val[i+N, i+2N]+ Gll.val[i+2N, i+N]-Gll.val[i+3N, i])+
-(id-G0l.val[j+3N, i+3N]) * Gl0.val[i, j]+
-(id-G0l.val[j+2N, i+2N]) * Gl0.val[i+N, j+N]+
-(id-G0l.val[j+N, i+N]) * Gl0.val[i+2N, j+2N]+
-(id-G0l.val[j, i]) * Gl0.val[i+3N, j+3N]+
-G0l.val[j+2N, i+3N] * Gl0.val[i, j+N]-
-G0l.val[j+N, i+3N] * Gl0.val[i, j+2N]+
-G0l.val[j, i+3N] * Gl0.val[i, j+3N]+
-G0l.val[j+3N, i+2N] * Gl0.val[i+N, j]+
-G0l.val[j+N, i+2N] * Gl0.val[i+N, j+2N]-
-G0l.val[j, i+2N] * Gl0.val[i+N, j+3N]-
-G0l.val[j+3N, i+N] * Gl0.val[i+2N, j]+
-G0l.val[j+2N, i+N] * Gl0.val[i+2N, j+N]+
-G0l.val[j, i+N] * Gl0.val[i+2N, j+3N]+
-G0l.val[j+3N, i] * Gl0.val[i+3N, j]-
-G0l.val[j+2N, i] * Gl0.val[i+3N, j+N]+
-G0l.val[j+N, i] * Gl0.val[i+3N, j+2N]
+    -(G00.val[j, j+3N]-G00.val[j+N, j+2N]+ G00.val[j+2N, j+N]-G00.val[j+3N, j])*
+    (Gll.val[i, i+3N]-Gll.val[i+N, i+2N]+ Gll.val[i+2N, i+N]-Gll.val[i+3N, i])+
+    (id-G0l.val[j+3N, i+3N]) * Gl0.val[i, j]+
+    (id-G0l.val[j+2N, i+2N]) * Gl0.val[i+N, j+N]+
+    (id-G0l.val[j+N, i+N]) * Gl0.val[i+2N, j+2N]+
+    (id-G0l.val[j, i]) * Gl0.val[i+3N, j+3N]+
+    G0l.val[j+2N, i+3N] * Gl0.val[i, j+N]-
+    G0l.val[j+N, i+3N] * Gl0.val[i, j+2N]+
+    G0l.val[j, i+3N] * Gl0.val[i, j+3N]+
+    G0l.val[j+3N, i+2N] * Gl0.val[i+N, j]+
+    G0l.val[j+N, i+2N] * Gl0.val[i+N, j+2N]-
+    G0l.val[j, i+2N] * Gl0.val[i+N, j+3N]-
+    G0l.val[j+3N, i+N] * Gl0.val[i+2N, j]+
+    G0l.val[j+2N, i+N] * Gl0.val[i+2N, j+N]+
+    G0l.val[j, i+N] * Gl0.val[i+2N, j+3N]+
+    G0l.val[j+3N, i] * Gl0.val[i+3N, j]-
+    G0l.val[j+2N, i] * Gl0.val[i+3N, j+N]+
+    G0l.val[j+N, i] * Gl0.val[i+3N, j+2N]
 end
 
 @inline Base.@propagate_inbounds function full_sdc_Mx_y_kernel(
-        mc, model::TwoBandModel, ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, flv, ::Discrete_MBF1_symm
-    )
+        mc, model::TwoBandModel, ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
+        flv, ::Discrete_MBF1_symm )
     i, j = ij   #we treat j as j=0
 	G00, G0l, Gl0, Gll = packed_greens
     N = length(lattice(model))
@@ -489,17 +488,17 @@ end
 end
 @inline Base.@propagate_inbounds function full_sdc_Mx_y_kernel(
     mc, model::TwoBandModel, ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
-    flv, ::Discrete_MBF1_X_symm)
-i, j = ij   #we treat j as j=0
-G00, G0l, Gl0, Gll = packed_greens
-N = length(lattice(model))
-id = I[i, j] * I[G0l.k, G0l.l] 
+    flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    i, j = ij   #we treat j as j=0
+    G00, G0l, Gl0, Gll = packed_greens
+    N = length(lattice(model))
+    id = I[i, j] * I[G0l.k, G0l.l] 
 
-4*imag(G00.val[j, j+N]-G00.val[j+N, j]) *imag(Gll.val[i, i+N]-Gll.val[i+N, i])+
-2*real((id-G0l.val[j+N, i+N]) * Gl0.val[i, j])+
-2*real((id-G0l.val[j, i]) * Gl0.val[i+N, j+N])+
-2*real(G0l.val[j, i+N]*Gl0.val[i, j+N])+
-2*real(G0l.val[j+N, i]*Gl0.val[i+N, j])
+    4*imag(G00.val[j, j+N]-G00.val[j+N, j]) *imag(Gll.val[i, i+N]-Gll.val[i+N, i])+
+    2*real((id-G0l.val[j+N, i+N]) * Gl0.val[i, j])+
+    2*real((id-G0l.val[j, i]) * Gl0.val[i+N, j+N])+
+    2*real(G0l.val[j, i+N]*Gl0.val[i, j+N])+
+    2*real(G0l.val[j+N, i]*Gl0.val[i+N, j])
 end
 
 ################################################################################
@@ -521,30 +520,30 @@ end
 end
 
 @inline Base.@propagate_inbounds function full_cdc_XX_kernel(
-    mc, ::Model, ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, flv, ::AbstractField
-)
-i, j = ij
-G00, G0l, Gl0, Gll = packed_greens
-N = length(lattice(mc))
-id = I[G0l.k, G0l.l]
+    mc, ::Model, ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
+    flv, ::AbstractField)
+    i, j = ij
+    G00, G0l, Gl0, Gll = packed_greens
+    N = length(lattice(mc))
+    id = I[G0l.k, G0l.l]
 
-return -(G0l.val[j + 2N, i + 2N]*Gl0.val[i, j]) - G0l.val[j + 3N, i + 2N]*Gl0.val[i, j + N] - G0l.val[j, i + 2N]*Gl0.val[i, j + 2N] - G0l.val[j + N, i + 2N]*Gl0.val[i, j + 3N] - 
-    G0l.val[j + 2N, i + 3N]*Gl0.val[i + N, j] - G0l.val[j + 3N, i + 3N]*Gl0.val[i + N, j + N] - G0l.val[j, i + 3N]*Gl0.val[i + N, j + 2N] - G0l.val[j + N, i + 3N]*Gl0.val[i + N, j + 3N] - 
-    G0l.val[j + 2N, i]*Gl0.val[i + 2N, j] - G0l.val[j + 3N, i]*Gl0.val[i + 2N, j + N] - G0l.val[j, i]*Gl0.val[i + 2N, j + 2N] - G0l.val[j + N, i]*Gl0.val[i + 2N, j + 3N] - 
-    G0l.val[j + 2N, i + N]*Gl0.val[i + 3N, j] - G0l.val[j + 3N, i + N]*Gl0.val[i + 3N, j + N] - G0l.val[j, i + N]*Gl0.val[i + 3N, j + 2N] - G0l.val[j + N, i + N]*Gl0.val[i + 3N, j + 3N] + 
-    (G00.val[j, j + 2N] + G00.val[j + N, j + 3N] + G00.val[j + 2N, j] + G00.val[j + 3N, j + N])*(Gll.val[i, i + 2N] + Gll.val[i + N, i + 3N] + Gll.val[i + 2N, i] + Gll.val[i + 3N, i + N]) + 
-    id*(Gl0.val[i, j] + Gl0.val[i + N, j + N] + Gl0.val[i + 2N, j + 2N] + Gl0.val[i + 3N, j + 3N])*I[j, i]      
+    return -(G0l.val[j + 2N, i + 2N]*Gl0.val[i, j]) - G0l.val[j + 3N, i + 2N]*Gl0.val[i, j + N] - G0l.val[j, i + 2N]*Gl0.val[i, j + 2N] - G0l.val[j + N, i + 2N]*Gl0.val[i, j + 3N] - 
+        G0l.val[j + 2N, i + 3N]*Gl0.val[i + N, j] - G0l.val[j + 3N, i + 3N]*Gl0.val[i + N, j + N] - G0l.val[j, i + 3N]*Gl0.val[i + N, j + 2N] - G0l.val[j + N, i + 3N]*Gl0.val[i + N, j + 3N] - 
+        G0l.val[j + 2N, i]*Gl0.val[i + 2N, j] - G0l.val[j + 3N, i]*Gl0.val[i + 2N, j + N] - G0l.val[j, i]*Gl0.val[i + 2N, j + 2N] - G0l.val[j + N, i]*Gl0.val[i + 2N, j + 3N] - 
+        G0l.val[j + 2N, i + N]*Gl0.val[i + 3N, j] - G0l.val[j + 3N, i + N]*Gl0.val[i + 3N, j + N] - G0l.val[j, i + N]*Gl0.val[i + 3N, j + 2N] - G0l.val[j + N, i + N]*Gl0.val[i + 3N, j + 3N] + 
+        (G00.val[j, j + 2N] + G00.val[j + N, j + 3N] + G00.val[j + 2N, j] + G00.val[j + 3N, j + N])*(Gll.val[i, i + 2N] + Gll.val[i + N, i + 3N] + Gll.val[i + 2N, i] + Gll.val[i + 3N, i + N]) + 
+        id*(Gl0.val[i, j] + Gl0.val[i + N, j + N] + Gl0.val[i + 2N, j + 2N] + Gl0.val[i + 3N, j + 3N])*I[j, i]      
 end
 @inline Base.@propagate_inbounds function full_cdc_XX_kernel(
-    mc, ::Model, ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, flv, ::Discrete_MBF1_X_symm
-)
-i, j = ij
-G00, G0l, Gl0, Gll = packed_greens
-N = length(lattice(mc))
-id = I[G0l.k, G0l.l]
+    mc, ::Model, ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
+    flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    i, j = ij
+    G00, G0l, Gl0, Gll = packed_greens
+    N = length(lattice(mc))
+    id = I[G0l.k, G0l.l]
 
-return  -2*real(conj(Gl0.val[i + N, j + N])*G0l.val[j, i] + conj(Gl0.val[i, j + N])*G0l.val[j, i + N] + conj(Gl0.val[i + N, j])*G0l.val[j + N, i] + 
-    conj(Gl0.val[i, j])*G0l.val[j + N, i + N]) + 2*id*I[j, i]*real(Gl0.val[i, j] + Gl0.val[i + N, j + N])   
+    return  -2*real(conj(Gl0.val[i + N, j + N])*G0l.val[j, i] + conj(Gl0.val[i, j + N])*G0l.val[j, i + N] + conj(Gl0.val[i + N, j])*G0l.val[j + N, i] + 
+        conj(Gl0.val[i, j])*G0l.val[j + N, i + N]) + 2*id*I[j, i]*real(Gl0.val[i, j] + Gl0.val[i + N, j + N])   
 end
 
 ###########################
@@ -582,10 +581,10 @@ Calculates the ⟨Δ†_++(i,τ) Δ_++(j,0)⟩ kernel
         G0l.val[j+2N, i+N]*G0l.val[j+3N, i]-
         G0l.val[j+2N, i]*G0l.val[j+3N, i+N]+
         G0l.val[j+2N, i+3N]*G0l.val[j+3N, i+2N])  
-        #the overall minus takes the missing im^2 into account from syt
 end
-@inline Base.@propagate_inbounds function pc_swave_kernel(mc, model, ij::NTuple{2}, 
-    packed_greens::_GM4{<: Matrix}, flv, ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm})
+@inline Base.@propagate_inbounds function pc_swave_kernel(mc, model, 
+    ij::NTuple{2},   packed_greens::_GM4{<: Matrix}, 
+    flv, ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm, Discrete_MBF2_symm})
     i, j = ij   
     G0l= packed_greens[2]
     N = length(lattice(model))
@@ -594,8 +593,8 @@ end
     return -4*(2id*(-id+real(G0l.val[j, i]+G0l.val[j+N, i+N]))+
         abs2(G0l.val[j, i+N])+abs2(G0l.val[j+N, i])-
         abs2(G0l.val[j, i])- abs2(G0l.val[j+N, i+N]))
-        #the overall minus takes the missing im^2 into account from syt
 end
+
 """
 Calculates the ⟨Δ_++(i,τ) Δ†_++(j,0)⟩ kernel
 """
@@ -622,14 +621,14 @@ end
         Gl0.val[i+3N,j+2N]*Gl0.val[i+2N,j+3N])  
         #the overall minus takes the missing im^2 into account from syt
 end
-@inline Base.@propagate_inbounds function pc_swave_kernel_conj(mc, model, ij::NTuple{2}, 
-    packed_greens::_GM4{<: Matrix}, flv, ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm})
+@inline Base.@propagate_inbounds function pc_swave_kernel_conj(mc, model, 
+    ij::NTuple{2},  packed_greens::_GM4{<: Matrix}, 
+    flv, ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm, Discrete_MBF2_symm})
     i, j = ij   
     Gl0= packed_greens[3]
     N = length(lattice(model))   
     return -4*(abs2(Gl0.val[i, j+N])+abs2(Gl0.val[i+N, j])-
         abs2(Gl0.val[i, j])- abs2(Gl0.val[i+N, j+N]))
-        #the overall minus takes the missing im^2 into account from syt
 end
 @inline Base.@propagate_inbounds function pc_swave_kernel_old(mc, model, ij::NTuple{2}, 
     packed_greens::_GM4{<: Matrix}, flv,::AbstractMagnBosonField)
@@ -704,8 +703,9 @@ Calculates the ⟨Δ†_±(i,τ) Δ_±(j,0)⟩ kernel
         G0l.val[j+2N, i+3N]*G0l.val[j+3N, i+2N])  
         #the overall minus takes the missing im^2 into account from syt
 end
-@inline Base.@propagate_inbounds function pc_spm_wave_kernel(mc, model, ij::NTuple{2}, 
-    packed_greens::_GM4{<: Matrix}, flv, ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm})
+@inline Base.@propagate_inbounds function pc_spm_wave_kernel(mc, model, 
+    ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
+    flv, ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm, Discrete_MBF2_symm})
     i, j = ij   #we treat j as j=0
     G0l= packed_greens[2]
     N = length(lattice(model))
@@ -713,7 +713,6 @@ end
     return -4*(2id*(-id+real(G0l.val[j, i] + G0l.val[j+N, i+N]))-
         abs2(G0l.val[j, i+N])- abs2(G0l.val[j+N, i])-
         abs2(G0l.val[j, i])- abs2(G0l.val[j+N, i+N]))
-        #the overall minus takes the missing im^2 into account from syt
 end
 """
 Calculates the ⟨Δ_±(i,τ) Δ†_±(j,0)⟩ kernel
@@ -740,16 +739,15 @@ end
         Gl0.val[i+N, j+2N]*Gl0.val[i, j+3N]+
         Gl0.val[i, j+2N]*Gl0.val[i+N, j+3N]+
         Gl0.val[i+3N, j+2N]*Gl0.val[i+2N, j+3N])  
-        #the overall minus takes the missing im^2 into account from syt
 end
-@inline Base.@propagate_inbounds function pc_spm_wave_kernel_conj(mc, model, ij::NTuple{2}, 
-    packed_greens::_GM4{<: Matrix}, flv, ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm})
+@inline Base.@propagate_inbounds function pc_spm_wave_kernel_conj(mc, model, 
+    ij::NTuple{2},  packed_greens::_GM4{<: Matrix}, 
+    flv, ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm, Discrete_MBF2_symm})
     i, j = ij   #we treat j as j=0
     Gl0= packed_greens[3]
     N = length(lattice(model))
     return -4*(-abs2(Gl0.val[i, j+N])-abs2(Gl0.val[i+N, j])-
         abs2(Gl0.val[i, j])- abs2(Gl0.val[i+N, j+N]))
-        #the overall minus takes the missing im^2 into account from syt
 end
 
 @inline Base.@propagate_inbounds function pc_spm_wave_kernel_old(mc, model, ij::NTuple{2}, 
@@ -820,7 +818,7 @@ Calculates the ⟨Δ†_X(i,τ) Δ_X(j,0)⟩ kernel
 
 end
 @inline Base.@propagate_inbounds function pc_XX_wave_kernel(mc, model, ij::NTuple{2}, 
-    packed_greens::_GM4{<: Matrix}, flv, ::Discrete_MBF1_X_symm)
+    packed_greens::_GM4{<: Matrix}, flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
     i, j = ij   #we treat j as j=0
     G0l= packed_greens[2]
     N = length(lattice(model))
@@ -859,7 +857,7 @@ Calculates the ⟨Δ†_Y(i,τ) Δ_Y(j,0)⟩ kernel
     (G0l.val[j + N, i + N] - id*I[j, i])*(G0l.val[j + 3N, i + 3N] - id*I[j, i]))
 end
 @inline Base.@propagate_inbounds function pc_YYzz_wave_kernel(mc, model, ij::NTuple{2}, 
-    packed_greens::_GM4{<: Matrix}, flv, ::Discrete_MBF1_X_symm)
+    packed_greens::_GM4{<: Matrix}, flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
     i, j = ij   #we treat j as j=0
     G0l= packed_greens[2]
     N = length(lattice(model))
@@ -897,7 +895,7 @@ Calculates the ∑_{z,0,x} ⟨Δ†_Y(i,τ) Δ_Y(j,0)⟩ kernel
     3*id*I[j, i]*(G0l.val[j + 2N, i + 2N] + G0l.val[j + 3N, i + 3N] - 2*id*I[j, i]))
 end
 @inline Base.@propagate_inbounds function pc_YYsum_wave_kernel(mc, model, ij::NTuple{2}, 
-    packed_greens::_GM4{<: Matrix}, flv, ::Discrete_MBF1_X_symm)
+    packed_greens::_GM4{<: Matrix}, flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
     i, j = ij   #we treat j as j=0
     G0l= packed_greens[2]
     N = length(lattice(model))

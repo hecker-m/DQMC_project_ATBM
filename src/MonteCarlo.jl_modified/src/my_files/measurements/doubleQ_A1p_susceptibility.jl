@@ -114,6 +114,9 @@ A1_Q1Q2_correlation(mc, model; kwargs...)
 Generates an equal-time A1_Q1Q2 double-Q correlation measurement. Note that the result needs to be added to the simulation 
 via `mc[:name] = result`.
 
+Note that internally in all three cases [Ising, XY, Heisenberg],
+the expression is summed over all magnetization directions ∑_{ζ,ζ` ∈[x,y,z]}…
+
 ## Optional Keyword Arguments
 - kwargs from `DQMCMeasurement`
 """
@@ -124,6 +127,9 @@ A1_Q1Q2_susceptibility(mc, model; kwargs...)
 
 Generates an time-integrated A1_Q1Q2 double-Q susceptibility measurement. Note that the result needs to be added to the 
 simulation via `mc[:name] = result`.
+
+Note that internally in all three cases [Ising, XY, Heisenberg],
+the expression is summed over all magnetization directions ∑_{ζ,ζ` ∈[x,y,z]}…
 
 ## Optional Keyword Arguments
 - kwargs from `DQMCMeasurement`
@@ -151,10 +157,10 @@ end
 
 
 @inline Base.@propagate_inbounds function full_A1_Q1Q2_kernel(
-        mc, model::TwoBandModel, klkPlP::NTuple{4}, packed_greens::_GM4{<: Matrix}, flv, ::AbstractMagnBosonField
-    )
+        mc, model::TwoBandModel, klkPlP::NTuple{4}, packed_greens::_GM4{<: Matrix}, 
+        flv, ::AbstractMagnBosonField  )
     k, l, kPi, lPj = klkPlP   #k, l, k+i, l+j
-	G00, G0l, Gl0, Gll = packed_greens
+  	G00, G0l, Gl0, Gll = packed_greens
     N = length(lattice(model))
     id = I[G0l.k, G0l.l] 
 
@@ -521,8 +527,8 @@ end
 
 
 @inline Base.@propagate_inbounds function full_A1_Q1Q2_kernel(
-  mc, model::TwoBandModel, klkPlP::NTuple{4}, packed_greens::_GM4{<: Matrix}, flv, ::Discrete_MBF1_X_symm
-)
+    mc, model::TwoBandModel, klkPlP::NTuple{4}, packed_greens::_GM4{<: Matrix}, 
+    flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
   k, l, kPi, lPj = klkPlP   #k, l, k+i, l+j
   G00, G0l, Gl0, Gll = packed_greens
   N = length(lattice(model))

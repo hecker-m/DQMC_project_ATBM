@@ -6,14 +6,14 @@
 #SBATCH --mail-type=all
 #SBATCH --mail-user=mhecker@umn.edu
 #SBATCH --array=1-160
-#SBATCH --job-name=IsingX_Striped
+#SBATCH --job-name=XY_Striped
 #SBATCH -o %x-%A_%a.out
 #=
     pwd
     echo $SLURM_NPROCS
     echo $SLURM_CPUS_PER_TASK
     echo
-    srun julia --threads=$SLURM_CPUS_PER_TASK slurm_IsingX_Striped.jl
+    srun julia --threads=$SLURM_CPUS_PER_TASK slurm_XY_Striped.jl
     exit
 =#
 
@@ -48,7 +48,7 @@ t1b=0.2*t;
 tpa=0.8*t;
 tpb=1.0*t;
 μ0=1.0*t;
-ϵ0=0.1;
+ϵ0=0.0;
 ϵB1Plus=ϵ0*t1a;
 ϵB1Minus=ϵ0*t1b;
 
@@ -73,14 +73,16 @@ end
     #######
     #Choosing the Configuration field
     #######
-    Nϕ=1            #The code is implemented to work for Nϕ=1,2,3, i.e. Ising, XY-, or Heisenberg field
+    Nϕ=2            #The code is implemented to work for Nϕ=1,2,3, i.e. Ising, XY-, or Heisenberg field
     discrete=true  #true-> discrete field, false->continuous field
     if discrete
         prefix="Discrete"
         if Nϕ==1
             suffix="_X_symm";
+        elseif Nϕ==2
+            suffix="_symm";
         else
-            suffix=""; #by default we use the symmetry-optimized Ising field
+            suffix=""; #by default we use the symmetry-optimized Ising- and XY- fields
         end
         schedule=SimpleScheduler(LocalSweep(),PartialGlobalFlip(0.2, 0, 10), LocalSweep(8),
             LocalSweep(),SpatialStaggeredFlip(0.2, 2, 10), LocalSweep(8),
@@ -96,7 +98,7 @@ end
     #######
     #Initializing the Model, and the DQMC Simulation
     #######
-    model = TwoBandModel(dims=2, L=L, U = U/Nϕ, tx = [t1a +ϵB1Plus; t1b +ϵB1Minus], ty = [t1a -ϵB1Plus; t1b -ϵB1Minus],
+    model = TwoBandModel(dims=2, L=L, U = U/Nϕ, tx = [t1a+ϵB1Plus; t1b+ϵB1Minus], ty = [t1a-ϵB1Plus; t1b-ϵB1Minus],
         tp = [tpa; tpb], μs = [μ0; -μ0], peierls=peierls)
 
 
@@ -156,7 +158,7 @@ end
     #mc.measurements[:Zk_proxy] = spectral_weight_proxy(mc, model, capacity=cap)
     #mc.measurements[:green]= greens_measurement(mc, model, capacity=cap)
     #mc.measurements[:CD_X_OP] = CD_X_OP(mc, model)  #For reasons unclear, the ρ^{x0} -OP is purely imaginary
-    #CD_X OP is zero in case of Ising-X
+    #CD_X OP is zero in case of Ising-X and XY
     mc.measurements[:CDSxx]=charge_density_susceptibility(mc, model, capacity=cap, flavor_iterator = MonteCarlo.FlavorIterator(mc, 0),
             kernel = full_cdc_XX_kernel)
 
@@ -190,7 +192,7 @@ end
     # run the simulation
     ###############
 
-    st="D_IsX_b_" * to_string(beta) *"_U_"* to_string(U) *"_L$(L)_eps_$(Int(100ϵ0))pc_B_$(Int(peierls))_sw$(sweeps)_th$(therm)_worker_$(worker).jld2";
+    st="D_XY_b_" * to_string(beta) *"_U_"* to_string(U) *"_L$(L)_eps_$(Int(100ϵ0))pc_B_$(Int(peierls))_sw$(sweeps)_th$(therm)_worker_$(worker).jld2";
     resumable_file=path* "/resumable_" *st;
     final_file=path * "/" * st;
 

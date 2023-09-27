@@ -4,7 +4,8 @@ p_input="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/DQMC_project_ATBM/proj
 # p=p_output
 
 fig_path="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/DQMC_project_ATBM/projects/IsingX_Striped/figures/"
-L_plot=8;ϵ_plot=0.05;
+L_plot=8;
+ϵ_plot=0.20;
 if isa(L_plot, Int)
     p=fig_path * "figs_L$(L_plot)/"
     if !iszero(ϵ_plot)

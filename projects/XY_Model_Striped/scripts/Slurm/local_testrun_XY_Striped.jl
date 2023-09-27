@@ -40,6 +40,8 @@ tpb=1.0*t;
         prefix="Discrete"
         if Nϕ==1
             suffix="_X_symm";
+        elseif Nϕ==2
+            suffix="_symm";
         else
             suffix=""; #by default we use the symmetry-optimized Ising field
         end
@@ -70,9 +72,9 @@ tpb=1.0*t;
     #Adding thermalization measurements
     #######
     metype=ComplexF64
-    #mc.thermalization_measurements[:occ_th] = occupation(mc, model,obs=FullBinner(Vector{metype}))
-    #mc.thermalization_measurements[:E_th] = total_energy(mc, model, obs=FullBinner(metype))
-    #mc.thermalization_measurements[:Mx_z_th] = magnetization(mc, model, :z, kernel = Mx_z_kernel, obs=FullBinner(Vector{metype}))
+    mc.thermalization_measurements[:occ_th] = occupation(mc, model,obs=FullBinner(Vector{metype}))
+    mc.thermalization_measurements[:E_th] = total_energy(mc, model, obs=FullBinner(metype))
+    mc.thermalization_measurements[:Mx_z_th] = magnetization(mc, model, :z, kernel = Mx_z_kernel, obs=FullBinner(Vector{metype}))
 
 
 
@@ -89,63 +91,63 @@ tpb=1.0*t;
     mc.measurements[:Mx_Y_OP] = Mx_X_OP(mc, model, :y)
     mc.measurements[:Mx_Z_OP] = Mx_X_OP(mc, model, :z)
 
-    # mc.measurements[:SDC_Mx_z] = spin_density_correlation(mc, model, :z, kernel=full_sdc_Mx_z_kernel, capacity=cap)
-    # mc.measurements[:SDS_Mx_z] = spin_density_susceptibility(mc, model, :z, kernel=full_sdc_Mx_z_kernel, capacity=cap)
-    # mc.measurements[:SDC_Mx_x] = spin_density_correlation(mc, model, :x, kernel=full_sdc_Mx_x_kernel, capacity=cap)
-    # mc.measurements[:SDS_Mx_x] = spin_density_susceptibility(mc, model, :x, kernel=full_sdc_Mx_x_kernel, capacity=cap)
-    # mc.measurements[:SDC_Mx_y] = spin_density_correlation(mc, model, :y, kernel=full_sdc_Mx_y_kernel, capacity=cap)
-    # mc.measurements[:SDS_Mx_y] = spin_density_susceptibility(mc, model, :y, kernel=full_sdc_Mx_y_kernel, capacity=cap)
+    mc.measurements[:SDC_Mx_z] = spin_density_correlation(mc, model, :z, kernel=full_sdc_Mx_z_kernel, capacity=cap)
+    mc.measurements[:SDS_Mx_z] = spin_density_susceptibility(mc, model, :z, kernel=full_sdc_Mx_z_kernel, capacity=cap)
+    mc.measurements[:SDC_Mx_x] = spin_density_correlation(mc, model, :x, kernel=full_sdc_Mx_x_kernel, capacity=cap)
+    mc.measurements[:SDS_Mx_x] = spin_density_susceptibility(mc, model, :x, kernel=full_sdc_Mx_x_kernel, capacity=cap)
+    mc.measurements[:SDC_Mx_y] = spin_density_correlation(mc, model, :y, kernel=full_sdc_Mx_y_kernel, capacity=cap)
+    mc.measurements[:SDS_Mx_y] = spin_density_susceptibility(mc, model, :y, kernel=full_sdc_Mx_y_kernel, capacity=cap)
 
     ##### superconductivity
     #
-    # #mc.measurements[:PDC_s] = pairing_correlation(mc, model, kernel = pc_swave_kernel, lattice_iterator = EachSitePairByDistance(), capacity=cap)
-    # mc.measurements[:PDS_s] = pairing_susceptibility(mc, model, kernel = pc_swave_kernel, lattice_iterator = EachSitePairByDistance(), capacity=cap)
-    # #mc.measurements[:PDC_spm] = pairing_correlation(mc, model, kernel = pc_spm_wave_kernel, lattice_iterator = EachSitePairByDistance(), capacity=cap)
-    # mc.measurements[:PDS_spm] = pairing_susceptibility(mc, model, kernel = pc_spm_wave_kernel, lattice_iterator = EachSitePairByDistance(), capacity=cap)
-    # mc.measurements[:PDS_XX] = pairing_susceptibility(mc, model, kernel = pc_XX_wave_kernel, lattice_iterator = EachSitePairByDistance(), capacity=cap)
-    # mc.measurements[:PDS_YYzz] = pairing_susceptibility(mc, model, kernel = pc_YYzz_wave_kernel, lattice_iterator = EachSitePairByDistance(), capacity=cap)
+    #mc.measurements[:PDC_s] = pairing_correlation(mc, model, kernel = pc_swave_kernel, lattice_iterator = EachSitePairByDistance(), capacity=cap)
+    mc.measurements[:PDS_s] = pairing_susceptibility(mc, model, kernel = pc_swave_kernel, lattice_iterator = EachSitePairByDistance(), capacity=cap)
+    #mc.measurements[:PDC_spm] = pairing_correlation(mc, model, kernel = pc_spm_wave_kernel, lattice_iterator = EachSitePairByDistance(), capacity=cap)
+    mc.measurements[:PDS_spm] = pairing_susceptibility(mc, model, kernel = pc_spm_wave_kernel, lattice_iterator = EachSitePairByDistance(), capacity=cap)
+    mc.measurements[:PDS_XX] = pairing_susceptibility(mc, model, kernel = pc_XX_wave_kernel, lattice_iterator = EachSitePairByDistance(), capacity=cap)
+    mc.measurements[:PDS_YYzz] = pairing_susceptibility(mc, model, kernel = pc_YYzz_wave_kernel, lattice_iterator = EachSitePairByDistance(), capacity=cap)
 
-    # mc.measurements[:Δ_Zy_bil_OP] = Δ_Zy_bil_OP(mc, model)
-    # mc.measurements[:Δ_0y_bil_OP] = Δ_0y_bil_OP(mc, model)
-    # mc.measurements[:Δ_Xy_bil_OP] = Δ_Xy_bil_OP(mc, model)
-    # mc.measurements[:Δ_Ysum_bil_OP] = Δ_Ysum_bil_OP(mc, model)
+    mc.measurements[:Δ_Zy_bil_OP] = Δ_Zy_bil_OP(mc, model)
+    mc.measurements[:Δ_0y_bil_OP] = Δ_0y_bil_OP(mc, model)
+    mc.measurements[:Δ_Xy_bil_OP] = Δ_Xy_bil_OP(mc, model)
+    mc.measurements[:Δ_Ysum_bil_OP] = Δ_Ysum_bil_OP(mc, model)
 
 
     ##### charge sector
     #
-    # #mc.measurements[:CDC] = charge_density_correlation(mc, model, capacity=cap)
-    # mc.measurements[:CDS] = charge_density_susceptibility(mc, model, capacity=cap)
-    # #mc.measurements[:Zk_proxy] = spectral_weight_proxy(mc, model, capacity=cap)
-    # #mc.measurements[:green]= greens_measurement(mc, model, capacity=cap)
-    # #mc.measurements[:CD_X_OP] = CD_X_OP(mc, model)  #For reasons unclear, the ρ^{x0} -OP is purely imaginary
-    # #CD_X OP is zero in case of Ising-X
-    # mc.measurements[:CDSxx]=charge_density_susceptibility(mc, model, capacity=cap, flavor_iterator = MonteCarlo.FlavorIterator(mc, 0),
-    #         kernel = full_cdc_XX_kernel)
+    #mc.measurements[:CDC] = charge_density_correlation(mc, model, capacity=cap)
+    mc.measurements[:CDS] = charge_density_susceptibility(mc, model, capacity=cap)
+    #mc.measurements[:Zk_proxy] = spectral_weight_proxy(mc, model, capacity=cap)
+    #mc.measurements[:green]= greens_measurement(mc, model, capacity=cap)
+    #mc.measurements[:CD_X_OP] = CD_X_OP(mc, model)  #For reasons unclear, the ρ^{x0} -OP is purely imaginary
+    #CD_X OP is zero in case of Ising-X and XY
+    mc.measurements[:CDSxx]=charge_density_susceptibility(mc, model, capacity=cap, flavor_iterator = MonteCarlo.FlavorIterator(mc, 0),
+            kernel = full_cdc_XX_kernel)
 
 
     ##### B1-nematic sector
     #
-    # mc.measurements[:B1_OP] = nematic_OP(mc, model, obs=FullBinner(Float64))
-    # mc.measurements[:B1_proxy_OP] = proxy_B1_OP(mc, model)
-    # mc.measurements[:B1_CDS] = B1_charge_density_susceptibility(mc, model, capacity=cap)
-    # mc.measurements[:NemS] = nematic_susceptibility(mc, model, capacity=cap)
-    # mc.measurements[:NemC] = nematic_correlation(mc, model, capacity=cap)
+    mc.measurements[:B1_OP] = nematic_OP(mc, model, obs=FullBinner(Float64))
+    mc.measurements[:B1_proxy_OP] = proxy_B1_OP(mc, model)
+    mc.measurements[:B1_CDS] = B1_charge_density_susceptibility(mc, model, capacity=cap)
+    mc.measurements[:NemS] = nematic_susceptibility(mc, model, capacity=cap)
+    mc.measurements[:NemC] = nematic_correlation(mc, model, capacity=cap)
 
     ##### A1p double-Q sector
     #
-    # mc.measurements[:A1p_OP] = A1p_OP(mc, model, obs=FullBinner(Float64))
-    # mc.measurements[:A1p_proxy_OP] = proxy_A1p_OP(mc, model)
-    # mc.measurements[:A1p_dQ_S] = A1_Q1Q2_susceptibility(mc, model, capacity=cap)
-    # mc.measurements[:A1p_dQ_C] = A1_Q1Q2_correlation(mc, model, capacity=cap)
+    mc.measurements[:A1p_OP] = A1p_OP(mc, model, obs=FullBinner(Float64))
+    mc.measurements[:A1p_proxy_OP] = proxy_A1p_OP(mc, model)
+    mc.measurements[:A1p_dQ_S] = A1_Q1Q2_susceptibility(mc, model, capacity=cap)
+    mc.measurements[:A1p_dQ_C] = A1_Q1Q2_correlation(mc, model, capacity=cap)
 
     ##### B1p double-Q sector
     #
-    # #mc.measurements[:B1p_OP_x] = B1p_OP(mc, model, :x, obs=FullBinner(Float64))
-    # #mc.measurements[:B1p_OP_y] = B1p_OP(mc, model, :y, obs=FullBinner(Float64))
-    # mc.measurements[:B1p_OP_z] = B1p_OP(mc, model, :z, obs=FullBinner(Float64))
-    # #B1p OP is zero in x, and y direction in case of Ising-X
-    # mc.measurements[:B1p_dQ_C] = B1p_Q1Q2_correlation(mc, model, capacity=cap)
-    # mc.measurements[:B1p_dQ_S] = B1p_Q1Q2_susceptibility(mc, model, capacity=cap)
+    #mc.measurements[:B1p_OP_x] = B1p_OP(mc, model, :x, obs=FullBinner(Float64))
+    #mc.measurements[:B1p_OP_y] = B1p_OP(mc, model, :y, obs=FullBinner(Float64))
+    mc.measurements[:B1p_OP_z] = B1p_OP(mc, model, :z, obs=FullBinner(Float64))
+    #B1p OP is zero in x, and y direction in case of Ising-X and XY
+    mc.measurements[:B1p_dQ_C] = B1p_Q1Q2_correlation(mc, model, capacity=cap)
+    mc.measurements[:B1p_dQ_S] = B1p_Q1Q2_susceptibility(mc, model, capacity=cap)
 
 
     ################

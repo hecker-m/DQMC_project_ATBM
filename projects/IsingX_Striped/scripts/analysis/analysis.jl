@@ -1,5 +1,5 @@
-# include("../../../../src/MonteCarlo.jl_modified/src/MonteCarlo2.jl")
-# using .MonteCarlo
+include("../../../../src/MonteCarlo.jl_modified/src/MonteCarlo2.jl")
+using .MonteCarlo
 using Distributions, DataFrames, JLD2, Dates, Plots, LinearAlgebra, CSV
 include("../../../../src/Analysis_Fcns/analysis_fcns.jl")
 include("../../../../src/Analysis_Fcns/load_fcns.jl")
@@ -15,7 +15,7 @@ paras=[(L=8, β=β0, U=U0, Pe=true) for U0 in Us, β0 in βs][:]
 #######
 save_bool=true;
 save_path="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/DQMC_project_ATBM/projects/IsingX_Striped/figures/dataframes/"
-my_ϵ="_eps_5pc"
+my_ϵ="_eps_20pc"
 save_name="L8" * my_ϵ
 
 #######

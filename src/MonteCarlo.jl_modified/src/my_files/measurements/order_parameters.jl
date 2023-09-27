@@ -25,11 +25,11 @@ function Δ_0y_bil_OP(
     flavor_iterator = nothing,
     kernel = pc_swave_kernel,
     kwargs...
-)
-eltype = geltype(mc)
-obs = FullBinner(Vector{Float64})
-temp = Vector{eltype}(undef, 4)
-return DQMCMeasurement(mc, model, greens_iterator, lattice_iterator, flavor_iterator, kernel; obs = obs, temp = temp, kwargs...)
+    )
+    eltype = geltype(mc)
+    obs = FullBinner(Vector{Float64})
+    temp = Vector{eltype}(undef, 4)
+    return DQMCMeasurement(mc, model, greens_iterator, lattice_iterator, flavor_iterator, kernel; obs = obs, temp = temp, kwargs...)
 end
 
 function Δ_Xy_bil_OP(
@@ -39,11 +39,11 @@ function Δ_Xy_bil_OP(
     flavor_iterator = nothing,
     kernel = pc_XX_wave_kernel,
     kwargs...
-)
-eltype = geltype(mc)
-obs = FullBinner(Vector{Float64})
-temp = Vector{eltype}(undef, 4)
-return DQMCMeasurement(mc, model, greens_iterator, lattice_iterator, flavor_iterator, kernel; obs = obs, temp = temp, kwargs...)
+    )
+    eltype = geltype(mc)
+    obs = FullBinner(Vector{Float64})
+    temp = Vector{eltype}(undef, 4)
+    return DQMCMeasurement(mc, model, greens_iterator, lattice_iterator, flavor_iterator, kernel; obs = obs, temp = temp, kwargs...)
 end
 
 function Δ_Ysum_bil_OP(
@@ -53,11 +53,11 @@ function Δ_Ysum_bil_OP(
     flavor_iterator = nothing,
     kernel = pc_YYsum_wave_kernel,
     kwargs...
-)
-eltype = geltype(mc)
-obs = FullBinner(Vector{Float64})
-temp = Vector{eltype}(undef, 4)
-return DQMCMeasurement(mc, model, greens_iterator, lattice_iterator, flavor_iterator, kernel; obs = obs, temp = temp, kwargs...)
+    )
+    eltype = geltype(mc)
+    obs = FullBinner(Vector{Float64})
+    temp = Vector{eltype}(undef, 4)
+    return DQMCMeasurement(mc, model, greens_iterator, lattice_iterator, flavor_iterator, kernel; obs = obs, temp = temp, kwargs...)
 end
 
 @bm function measure!(::Nothing, m::DQMCMeasurement{T}, mc::DQMC, 
@@ -171,10 +171,11 @@ end
     return -G.val[i, i + 2N] - G.val[i + N, i + 3N] - G.val[i + 2N, i] - G.val[i + 3N, i + N]
 end
 @inline Base.@propagate_inbounds function charge_X_OP_kernel(i, N, G::_GM{<: Matrix}, 
-    ::Union{Discrete_MBF1_X, Discrete_MBF1_X_symm})
+    ::Union{Discrete_MBF1_X, Discrete_MBF1_X_symm, Discrete_MBF2_symm})
     return 0
 end
-@bm function measure!(::Nothing, m::DQMCMeasurement{typeof(charge_X_OP_kernel)}, mc::DQMC, packed_greens)
+@bm function measure!(::Nothing, m::DQMCMeasurement{typeof(charge_X_OP_kernel)}, 
+    mc::DQMC, packed_greens)
     m.temp .= zero(eltype(m.temp))
     lat=lattice(mc)
     N = length(lat)
@@ -220,7 +221,8 @@ end
 @inline Base.@propagate_inbounds function proxy_A1p_OP_kernel(i, N, G::_GM{<: Matrix}, ::AbstractField)
     return 4 - G.val[i, i] - G.val[i + N, i + N] - G.val[i + 2N, i + 2N] - G.val[i + 3N, i + 3N]
 end
-@inline Base.@propagate_inbounds function proxy_A1p_OP_kernel(i, N, G::_GM{<: Matrix}, ::Discrete_MBF1_X_symm)
+@inline Base.@propagate_inbounds function proxy_A1p_OP_kernel(i, N, G::_GM{<: Matrix}, 
+    ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
     return 4 - 2*real(G.val[i, i] +G.val[i + N, i + N])
 end
 @bm function measure!(::Nothing, m::DQMCMeasurement{typeof(proxy_A1p_OP_kernel)}, mc::DQMC, packed_greens)
@@ -266,13 +268,15 @@ end
 @inline Base.@propagate_inbounds function proxy_B1_OP_kernel(is::NTuple{5}, N, G::_GM{T}, mc) where T
     return proxy_B1_OP_kernel(is, N, G, field(mc))
 end
-@inline Base.@propagate_inbounds function proxy_B1_OP_kernel(is::NTuple{5}, N, G::_GM{<: Matrix}, ::AbstractField)
+@inline Base.@propagate_inbounds function proxy_B1_OP_kernel(is::NTuple{5}, N, 
+    G::_GM{<: Matrix}, ::AbstractField)
     i, iPa1, iMa1, iPa2, iMa2 =is
     return -G.val[iMa1, i] + G.val[iMa2, i] - G.val[iPa1, i] + G.val[iPa2, i] - G.val[iMa1 + N, i + N] + G.val[iMa2 + N, i + N] - G.val[iPa1 + N, i + N] + 
     G.val[iPa2 + N, i + N] - G.val[iMa1 + 2N, i + 2N] + G.val[iMa2 + 2N, i + 2N] - G.val[iPa1 + 2N, i + 2N] + G.val[iPa2 + 2N, i + 2N] - 
     G.val[iMa1 + 3N, i + 3N] + G.val[iMa2 + 3N, i + 3N] - G.val[iPa1 + 3N, i + 3N] + G.val[iPa2 + 3N, i + 3N]
 end
-@inline Base.@propagate_inbounds function proxy_B1_OP_kernel(is::NTuple{5}, N, G::_GM{<: Matrix}, ::Discrete_MBF1_X_symm)
+@inline Base.@propagate_inbounds function proxy_B1_OP_kernel(is::NTuple{5}, N, 
+    G::_GM{<: Matrix}, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
     i, iPa1, iMa1, iPa2, iMa2 =is
     return 2 *real(-G.val[iMa1, i] + G.val[iMa2, i] - G.val[iPa1, i] + G.val[iPa2, i] - 
     G.val[iMa1 + N, i + N] + G.val[iMa2 + N, i + N] - 
@@ -299,7 +303,7 @@ end
 end
 
 ###########################
-### lattice iterator for B1 order parameter
+### lattice iterator for B₁ bilinear order parameter
 ###########################
 
 struct EachSitePair_B1_OP <: DirectLatticeIterator end
@@ -339,7 +343,7 @@ end
     push!(m.observable, real(m.temp[1]))
 end
 ###########################
-### lattice iterator for A1p order parameter
+### lattice iterator for A₁` bilinear order parameter
 ###########################
 
 struct EachSitePair_A1p_OP <: DirectLatticeIterator end
@@ -381,7 +385,7 @@ end
 end
 
 ###########################
-### lattice iterator for B1p order parameter
+### lattice iterator for B₁` bilinear order parameter
 ###########################
 
 struct EachSitePair_B1p_OP <: DirectLatticeIterator end
@@ -426,7 +430,7 @@ end
 
 
 ###########################
-### nematic_OP
+### nematic OP, i.e. B₁ bilinear OP
 ###########################
 function nematic_OP_measurement(
     dqmc::DQMC, model::Model,  greens_iterator; 
@@ -442,6 +446,8 @@ end
 """
 nematic_OP(mc, model; kwargs...)
 
+Note that internally in all three cases [Ising, XY, Heisenberg],
+the expression is summed over all magnetization directions ∑_{ζ∈[x,y,z]}…
 """
 nematic_OP(args...; kwargs...) = nematic_OP_measurement(args..., Greens(); kwargs...)
 
@@ -462,6 +468,8 @@ end
 """
 A1p_OP(mc, model; kwargs...)
 
+Note that internally in all three cases [Ising, XY, Heisenberg],
+the expression is summed over all magnetization directions ∑_{ζ∈[x,y,z]}…
 """
 A1p_OP(args...; kwargs...) = A1p_OP_measurement(args..., Greens(); kwargs...)
 
@@ -487,6 +495,8 @@ end
 """
 B1p_OP(mc, model; kwargs...)
 
+Note that internally in all three cases [Ising, XY, Heisenberg],
+the expression is summed over all magnetization directions ∑_{ζ,ζ` ∈[x,y,z]}…
 """
 B1p_OP(args...; kwargs...) = B1p_OP_measurement(args..., Greens(); kwargs...)
 
@@ -496,19 +506,21 @@ B1p_OP(args...; kwargs...) = B1p_OP_measurement(args..., Greens(); kwargs...)
 ###########################
 """
 Calculates the nematic order parameter kernel 
+Note that internally in all three cases [Ising, XY, Heisenberg],
+the expression is summed over all magnetization directions ∑_{ζ∈[x,y,z]}…
 """
-@inline Base.@propagate_inbounds function full_nematic_OP_kernel(mc::DQMC, model::TwoBandModel, kkPp::NTuple{2}, 
-    G::Union{GreensMatrix, _GM4{T}}, flv) where {T <: Matrix}
+@inline Base.@propagate_inbounds function full_nematic_OP_kernel(mc::DQMC, model::TwoBandModel, 
+        kkPp::NTuple{2}, G::Union{GreensMatrix, _GM4{T}}, flv) where {T <: Matrix}
     return full_nematic_OP_kernel(mc, model, kkPp, G, flv, field(mc))
 end
-@inline Base.@propagate_inbounds function full_nematic_OP_kernel(mc::DQMC, model::TwoBandModel, kkPp::NTuple{2}, 
-    G::GreensMatrix, flv, field::AbstractMagnBosonField)
+@inline Base.@propagate_inbounds function full_nematic_OP_kernel(mc::DQMC, model::TwoBandModel, 
+        kkPp::NTuple{2}, G::GreensMatrix, flv, field::AbstractMagnBosonField)
     return full_nematic_OP_kernel(mc, model, kkPp, (G, G, G, G), flv, field)
 end
 
 @inline Base.@propagate_inbounds function full_nematic_OP_kernel(
-        mc, model::TwoBandModel, kkPp::NTuple{2}, packed_greens::_GM4{<: Matrix}, flv, ::AbstractMagnBosonField
-    )
+        mc, model::TwoBandModel, kkPp::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
+        flv, ::AbstractMagnBosonField)
     k, kPp = kkPp   # k, k+p
 	G00, G0l, Gl0, Gll = packed_greens
     N = length(lattice(model))
@@ -529,8 +541,8 @@ end
       Gl0.val[kPp + 3N, k + 3N])*I[k, kPp]
 end
 @inline Base.@propagate_inbounds function full_nematic_OP_kernel(
-    mc, model::TwoBandModel, kkPp::NTuple{2}, packed_greens::_GM4{<: Matrix}, flv, ::Discrete_MBF1_X_symm
-)
+        mc, model::TwoBandModel, kkPp::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
+        flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
     k, kPp = kkPp   # k, k+p
     G00, G0l, Gl0, Gll = packed_greens
     N = length(lattice(model))
@@ -579,9 +591,8 @@ end
 end
 
 @inline Base.@propagate_inbounds function full_B1p_x_OP_kernel(
-    mc, model::TwoBandModel, kkPp::NTuple{2}, packed_greens::_GM4{<: Matrix}, flv, 
-    ::Union{Discrete_MBF1_X_symm, Discrete_MBF1_X}
-    )
+        mc, model::TwoBandModel, kkPp::NTuple{2}, packed_greens::_GM4{<: Matrix}, flv, 
+        ::Union{Discrete_MBF1_X_symm, Discrete_MBF1_X, Discrete_MBF2_symm})
     k, kPp = kkPp   # k, k+p
     G00, G0l, Gl0, Gll = packed_greens
     N = length(lattice(model))
@@ -596,18 +607,18 @@ end
 """
 Calculates the B1` order parameter kernel in y direction 
 """
-@inline Base.@propagate_inbounds function full_B1p_y_OP_kernel(mc::DQMC, model::TwoBandModel, kkPp::NTuple{2}, 
-    G::Union{GreensMatrix, _GM4{T}}, flv) where {T <: Matrix}
+@inline Base.@propagate_inbounds function full_B1p_y_OP_kernel(mc::DQMC, model::TwoBandModel, 
+    kkPp::NTuple{2},  G::Union{GreensMatrix, _GM4{T}}, flv) where {T <: Matrix}
     return full_B1p_y_OP_kernel(mc, model, kkPp, G, flv, field(mc))
 end
-@inline Base.@propagate_inbounds function full_B1p_y_OP_kernel(mc::DQMC, model::TwoBandModel, kkPp::NTuple{2}, 
-    G::GreensMatrix, flv, field::AbstractMagnBosonField)
+@inline Base.@propagate_inbounds function full_B1p_y_OP_kernel(mc::DQMC, model::TwoBandModel, 
+    kkPp::NTuple{2}, G::GreensMatrix, flv, field::AbstractMagnBosonField)
     return full_B1p_y_OP_kernel(mc, model, kkPp, (G, G, G, G), flv, field)
 end
 
 @inline Base.@propagate_inbounds function full_B1p_y_OP_kernel(
-        mc, model::TwoBandModel, kkPp::NTuple{2}, packed_greens::_GM4{<: Matrix}, flv, ::AbstractMagnBosonField
-    )
+        mc, model::TwoBandModel, kkPp::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
+        flv, ::AbstractMagnBosonField )
     k, kPp = kkPp   # k, k+p
 	G00, G0l, Gl0, Gll = packed_greens
     N = length(lattice(model))
@@ -625,9 +636,8 @@ end
 end
 
 @inline Base.@propagate_inbounds function full_B1p_y_OP_kernel(
-    mc, model::TwoBandModel, kkPp::NTuple{2}, packed_greens::_GM4{<: Matrix}, flv, 
-    ::Union{Discrete_MBF1_X_symm, Discrete_MBF1_X}
-    )
+        mc, model::TwoBandModel, kkPp::NTuple{2}, packed_greens::_GM4{<: Matrix}, flv, 
+        ::Union{Discrete_MBF1_X_symm, Discrete_MBF1_X, Discrete_MBF2_symm} )
     k, kPp = kkPp   # k, k+p
     G00, G0l, Gl0, Gll = packed_greens
     N = length(lattice(model))
@@ -642,18 +652,18 @@ end
 """
 Calculates the B1` order parameter kernel in z direction 
 """
-@inline Base.@propagate_inbounds function full_B1p_z_OP_kernel(mc::DQMC, model::TwoBandModel, kkPp::NTuple{2}, 
-    G::Union{GreensMatrix, _GM4{T}}, flv) where {T <: Matrix}
+@inline Base.@propagate_inbounds function full_B1p_z_OP_kernel(mc::DQMC, model::TwoBandModel, 
+    kkPp::NTuple{2}, G::Union{GreensMatrix, _GM4{T}}, flv) where {T <: Matrix}
     return full_B1p_z_OP_kernel(mc, model, kkPp, G, flv, field(mc))
 end
-@inline Base.@propagate_inbounds function full_B1p_z_OP_kernel(mc::DQMC, model::TwoBandModel, kkPp::NTuple{2}, 
-    G::GreensMatrix, flv, field::AbstractMagnBosonField)
+@inline Base.@propagate_inbounds function full_B1p_z_OP_kernel(mc::DQMC, model::TwoBandModel, 
+    kkPp::NTuple{2}, G::GreensMatrix, flv, field::AbstractMagnBosonField)
     return full_B1p_z_OP_kernel(mc, model, kkPp, (G, G, G, G), flv, field)
 end
 
 @inline Base.@propagate_inbounds function full_B1p_z_OP_kernel(
-        mc, model::TwoBandModel, kkPp::NTuple{2}, packed_greens::_GM4{<: Matrix}, flv, ::AbstractMagnBosonField
-    )
+        mc, model::TwoBandModel, kkPp::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
+        flv, ::AbstractMagnBosonField )
     k, kPp = kkPp   # k, k+p
 	G00, G0l, Gl0, Gll = packed_greens
     N = length(lattice(model))
@@ -667,8 +677,8 @@ end
 end
 
 @inline Base.@propagate_inbounds function full_B1p_z_OP_kernel(
-    mc, model::TwoBandModel, kkPp::NTuple{2}, packed_greens::_GM4{<: Matrix}, flv,  ::Discrete_MBF1_X_symm
-    )
+        mc, model::TwoBandModel, kkPp::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
+        flv,  ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm} )
     k, kPp = kkPp   # k, k+p
     G00, G0l, Gl0, Gll = packed_greens
     N = length(lattice(model))

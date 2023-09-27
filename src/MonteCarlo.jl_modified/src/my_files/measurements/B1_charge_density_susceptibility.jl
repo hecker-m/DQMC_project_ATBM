@@ -100,20 +100,20 @@ B1_charge_density_susceptibility(mc, args...; kwargs...) = B1_charge_density_mea
 """
 Calculates the B1_charge_density susceptibility kernel 
 """
-@inline Base.@propagate_inbounds function full_B1_charge_density_kernel(mc::DQMC, model::TwoBandModel, isks::NTuple{10}, 
-    G::Union{GreensMatrix, _GM4{T}}, flv) where {T <: Matrix}
+@inline Base.@propagate_inbounds function full_B1_charge_density_kernel(mc::DQMC, model::TwoBandModel, 
+    isks::NTuple{10}, G::Union{GreensMatrix, _GM4{T}}, flv) where {T <: Matrix}
     return full_B1_charge_density_kernel(mc, model, isks, G, flv, field(mc))
 end
-@inline Base.@propagate_inbounds function full_B1_charge_density_kernel(mc::DQMC, model::TwoBandModel, isks::NTuple{10}, 
-    G::GreensMatrix, flv, field::AbstractMagnBosonField)
+@inline Base.@propagate_inbounds function full_B1_charge_density_kernel(mc::DQMC, model::TwoBandModel, 
+    isks::NTuple{10},  G::GreensMatrix, flv, field::AbstractMagnBosonField)
     return full_B1_charge_density_kernel(mc, model, isks, (G, G, G, G), flv, field)
 end
 
 
 
 @inline Base.@propagate_inbounds function full_B1_charge_density_kernel(
-        mc, model::TwoBandModel, isks::NTuple{10}, packed_greens::_GM4{<: Matrix}, flv, ::AbstractMagnBosonField
-    )
+        mc, model::TwoBandModel, isks::NTuple{10}, packed_greens::_GM4{<: Matrix}, 
+        flv, ::AbstractMagnBosonField  )
     i, iPa1, iMa1, iPa2, iMa2, k, kPa1, kMa1, kPa2, kMa2 = isks   # i, i+a1, i-a1, etc.
 	G00, G0l, Gl0, Gll = packed_greens
     N = length(lattice(model))
@@ -170,28 +170,28 @@ end
 end
 
 @inline Base.@propagate_inbounds function full_B1_charge_density_kernel(
-    mc, model::TwoBandModel, isks::NTuple{10}, packed_greens::_GM4{<: Matrix}, flv, ::Discrete_MBF1_X_symm
-)
-i, iPa1, iMa1, iPa2, iMa2, k, kPa1, kMa1, kPa2, kMa2 = isks   # i, i+a1, i-a1, etc.
-G00, G0l, Gl0, Gll = packed_greens
-N = length(lattice(model))
-id = I[G0l.k, G0l.l] 
+        mc, model::TwoBandModel, isks::NTuple{10}, packed_greens::_GM4{<: Matrix}, 
+        flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    i, iPa1, iMa1, iPa2, iMa2, k, kPa1, kMa1, kPa2, kMa2 = isks   # i, i+a1, i-a1, etc.
+    G00, G0l, Gl0, Gll = packed_greens
+    N = length(lattice(model))
+    id = I[G0l.k, G0l.l] 
 
 
-return real(2*G0l.val[kMa2, i]*(Gl0.val[iMa1, k] - Gl0.val[iMa2, k] + Gl0.val[iPa1, k] - Gl0.val[iPa2, k]) + 
-2*G0l.val[kMa1, i]*(-Gl0.val[iMa1, k] + Gl0.val[iMa2, k] - Gl0.val[iPa1, k] + Gl0.val[iPa2, k]) + 
-(G0l.val[kMa1 + N, i] - G0l.val[kMa2 + N, i] + G0l.val[kPa1 + N, i] - G0l.val[kPa2 + N, i])*(Gl0.val[iMa1, k + N] - Gl0.val[iMa2, k + N] + Gl0.val[iPa1, k + N] - 
-  Gl0.val[iPa2, k + N]) + (G0l.val[kMa1, i + N] - G0l.val[kMa2, i + N] + G0l.val[kPa1, i + N] - G0l.val[kPa2, i + N])*
- (Gl0.val[iMa1 + N, k] - Gl0.val[iMa2 + N, k] + Gl0.val[iPa1 + N, k] - Gl0.val[iPa2 + N, k]) + 
-(G0l.val[kMa1 + N, i + N] - G0l.val[kMa2 + N, i + N] + G0l.val[kPa1 + N, i + N] - G0l.val[kPa2 + N, i + N])*
- (Gl0.val[iMa1 + N, k + N] - Gl0.val[iMa2 + N, k + N] + Gl0.val[iPa1 + N, k + N] - Gl0.val[iPa2 + N, k + N]) + 
-2*(G0l.val[kPa2, i]*(Gl0.val[iMa1, k] - Gl0.val[iMa2, k] + Gl0.val[iPa1, k] - Gl0.val[iPa2, k]) + 
-  G0l.val[kPa1, i]*(-Gl0.val[iMa1, k] + Gl0.val[iMa2, k] - Gl0.val[iPa1, k] + Gl0.val[iPa2, k]) + 
-  id*(Gl0.val[iMa1, k] - Gl0.val[iMa2, k] + Gl0.val[iPa1, k] - Gl0.val[iPa2, k] + Gl0.val[iMa1 + N, k + N] - Gl0.val[iMa2 + N, k + N] + Gl0.val[iPa1 + N, k + N] - 
-    Gl0.val[iPa2 + N, k + N])*(I[kMa1, i] - I[kMa2, i] + I[kPa1, i] - I[kPa2, i])))+
-    4*real(G00.val[kMa1, k] - G00.val[kMa2, k] + G00.val[kPa1, k] - G00.val[kPa2, k] + G00.val[kMa1 + N, k + N] - G00.val[kMa2 + N, k + N] + G00.val[kPa1 + N, k + N] - 
-    G00.val[kPa2 + N, k + N])*real(Gll.val[iMa1, i] - Gll.val[iMa2, i] + Gll.val[iPa1, i] - Gll.val[iPa2, i] + Gll.val[iMa1 + N, i + N] - Gll.val[iMa2 + N, i + N] + 
-    Gll.val[iPa1 + N, i + N] - Gll.val[iPa2 + N, i + N]) 
+    return real(2*G0l.val[kMa2, i]*(Gl0.val[iMa1, k] - Gl0.val[iMa2, k] + Gl0.val[iPa1, k] - Gl0.val[iPa2, k]) + 
+    2*G0l.val[kMa1, i]*(-Gl0.val[iMa1, k] + Gl0.val[iMa2, k] - Gl0.val[iPa1, k] + Gl0.val[iPa2, k]) + 
+    (G0l.val[kMa1 + N, i] - G0l.val[kMa2 + N, i] + G0l.val[kPa1 + N, i] - G0l.val[kPa2 + N, i])*(Gl0.val[iMa1, k + N] - Gl0.val[iMa2, k + N] + Gl0.val[iPa1, k + N] - 
+    Gl0.val[iPa2, k + N]) + (G0l.val[kMa1, i + N] - G0l.val[kMa2, i + N] + G0l.val[kPa1, i + N] - G0l.val[kPa2, i + N])*
+    (Gl0.val[iMa1 + N, k] - Gl0.val[iMa2 + N, k] + Gl0.val[iPa1 + N, k] - Gl0.val[iPa2 + N, k]) + 
+    (G0l.val[kMa1 + N, i + N] - G0l.val[kMa2 + N, i + N] + G0l.val[kPa1 + N, i + N] - G0l.val[kPa2 + N, i + N])*
+    (Gl0.val[iMa1 + N, k + N] - Gl0.val[iMa2 + N, k + N] + Gl0.val[iPa1 + N, k + N] - Gl0.val[iPa2 + N, k + N]) + 
+    2*(G0l.val[kPa2, i]*(Gl0.val[iMa1, k] - Gl0.val[iMa2, k] + Gl0.val[iPa1, k] - Gl0.val[iPa2, k]) + 
+    G0l.val[kPa1, i]*(-Gl0.val[iMa1, k] + Gl0.val[iMa2, k] - Gl0.val[iPa1, k] + Gl0.val[iPa2, k]) + 
+    id*(Gl0.val[iMa1, k] - Gl0.val[iMa2, k] + Gl0.val[iPa1, k] - Gl0.val[iPa2, k] + Gl0.val[iMa1 + N, k + N] - Gl0.val[iMa2 + N, k + N] + Gl0.val[iPa1 + N, k + N] - 
+        Gl0.val[iPa2 + N, k + N])*(I[kMa1, i] - I[kMa2, i] + I[kPa1, i] - I[kPa2, i])))+
+        4*real(G00.val[kMa1, k] - G00.val[kMa2, k] + G00.val[kPa1, k] - G00.val[kPa2, k] + G00.val[kMa1 + N, k + N] - G00.val[kMa2 + N, k + N] + G00.val[kPa1 + N, k + N] - 
+        G00.val[kPa2 + N, k + N])*real(Gll.val[iMa1, i] - Gll.val[iMa2, i] + Gll.val[iPa1, i] - Gll.val[iPa2, i] + Gll.val[iMa1 + N, i + N] - Gll.val[iMa2 + N, i + N] + 
+        Gll.val[iPa1 + N, i + N] - Gll.val[iPa2 + N, i + N]) 
 end
 
 
