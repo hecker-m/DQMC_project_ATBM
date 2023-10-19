@@ -1,8 +1,20 @@
+###############
+### specific observables function
+###############
+compressibility_fcn(n, nSq) =nSq - n^2
+compress_norm(mc) =length(lattice(mc))* mc.parameters.beta
+
+specific_heat_fcn(en, h2, h3, h4) =h2 +h3 +h4 - en^2
+spec_heat_norm(mc) =mc.parameters.beta^2
+
+
 ################
 ## combining results from different workers
 ################
 function fill_array!(dqmcs, key, μ_array, σ_array, my_lvl::Int, 
-    ::Union{Nothing, EachSitePair_B1, EachDoubleSitePairByDistance, EachDoubleSitePairByDistance_Q1Q2, EachDoubleSitePairByDistance_B1p_Q1Q2})
+    ::Union{Nothing, EachSitePair_B1, EachDoubleSitePairByDistance, 
+        EachDoubleSitePairByDistance_Q1Q2, EachDoubleSitePairByDistance_B1p_Q1Q2,
+        PS_EachBondPairByBravaisDistance, EachWeightedBond})
     N_worker=size(μ_array)[2]
     for worker =1:N_worker
         μ_array[:,worker] .=mean(dqmcs[worker][key].observable,1);
@@ -58,35 +70,36 @@ end
 ################
 ## evaluating the combined arrays for specific observables of interest
 ################
+"""
+    value_observable(mc::DQMC, key::Symbol, μ_vec::Vector, σ_vec::Vector ; kwargs...)
+
+Using the input vector (`μ_vec`, `σ_vec`), it computes the observable corresponding to `key`.\\
+It returns real values only; printing errors if the imaginary part is non-zero.\\
+The actual evaluation happens in `_mean_std_error!(mc, key, μ_vec, σ_vec, mc[key].lattice_iterator ; kwargs...)`.
+"""
 function value_observable(mc::DQMC, key::Symbol, μ_vec::Vector, σ_vec::Vector ; kwargs...)
     μ_val, σ_val = _mean_std_error!(mc, key, μ_vec, σ_vec, mc[key].lattice_iterator ; kwargs...)
     if abs(imag(μ_val))>10^(-4) || abs(imag(σ_val))>10^(-4)
-        println("There is something imaginary.")
+        println("There is something imaginary for $(key).")
         @show μ_val, σ_val
     end       
     return real(μ_val), real(σ_val)
 end
 function _mean_std_error!(mc::DQMC, key::Symbol, μ_vec::Vector, σ_vec::Vector, 
-    ::Union{EachSitePair_B1, EachDoubleSitePairByDistance, EachDoubleSitePairByDistance_Q1Q2, EachDoubleSitePairByDistance_B1p_Q1Q2} ;
-     q::NTuple=(0.0, 0.0), norm=nothing)
-    N=length(mc.model.l)
-    if norm === nothing
-        _norm=1.0
-    else
-        _norm=norm
-    end
-    return μ_vec[1]*_norm, σ_vec[1]*_norm
+    ::Union{EachSitePair_B1, EachDoubleSitePairByDistance, EachDoubleSitePairByDistance_Q1Q2, 
+    EachDoubleSitePairByDistance_B1p_Q1Q2, EachWeightedBond, PS_EachBondPairByBravaisDistance} ; 
+    q::NTuple=(0.0, 0.0), norm=1.0, idx=1 ::Int)
+
+    return μ_vec[idx]*norm, σ_vec[idx]*norm
 end
+
+
 function _mean_std_error!(mc::DQMC, key::Symbol, μ_vec::Vector, σ_vec::Vector, ::Nothing ; 
-    q::NTuple=(0.0, 0.0), norm=nothing)
+    q::NTuple=(0.0, 0.0), norm=1.0/length(lattice(mc)))
     L =mc.model.l.Ls[1]
-    N=length(mc.model.l)
+    N=length(lattice(mc))
     Nvec=length(μ_vec)
-    if norm === nothing
-        _norm=1.0/N
-    else
-        _norm=norm
-    end
+
     nflav= Nvec>N ? div(Nvec, N) : 1; #most measurements are already summed over flavors, but e.g. occupation is not
     μ_val=zero(ComplexF64);
     σ_val=zero(ComplexF64);
@@ -94,18 +107,13 @@ function _mean_std_error!(mc::DQMC, key::Symbol, μ_vec::Vector, σ_vec::Vector,
         μ_val+=cis(ix*q[1]+iy*q[2])*μ_vec[ix+(iy-1)*L+(flv -1)*N] 
         σ_val+= σ_vec[ix+(iy-1)*L+(flv -1)*N] 
     end
-    return μ_val*_norm, σ_val*_norm
+    return μ_val*norm, σ_val*norm
 end
 function _mean_std_error!(mc::DQMC, key::Symbol, μ_vec::Vector, σ_vec::Vector, iter::EachSitePairByDistance ; 
-    q::NTuple=(0.0, 0.0), norm=nothing)
+    q::NTuple=(0.0, 0.0), norm=1.0)
     L =mc.model.l.Ls[1]
     N=length(mc.model.l)
-    T=1/mc.parameters.beta;
-    Nτ=mc.parameters.slices;
-    δτ=mc.parameters.delta_tau; #δτ=1/(T*Nτ)
-    norm === nothing ? _norm=1.0 : _norm=norm
 
-    Nvec=length(μ_vec)
     μ_val=zero(ComplexF64);σ_val=zero(ComplexF64);
 
     for k=1:N
@@ -114,27 +122,118 @@ function _mean_std_error!(mc::DQMC, key::Symbol, μ_vec::Vector, σ_vec::Vector,
         μ_val+=cis(sum(dir .*q))*μ_vec[k] 
         σ_val+= σ_vec[k] 
     end
-
-    # for ix=1:L, iy=1:L
-    #     μ_val+=cis((ix-1)*q[1]+(iy-1)*q[2])*μ_vec[ix+(iy-1)*L] 
-    #     σ_val+= σ_vec[ix+(iy-1)*L] 
-    # end
-    return μ_val*_norm, σ_val*_norm
+    return μ_val*norm, σ_val*norm
 end
+
+###############
+### auxiliary functions for below
+##############
+function first_key(keys)
+    return isa(keys, Symbol) ? keys : keys[1]
+end
+
+function get_norm(mc::DQMC, tuple)
+    return haskey(tuple, :norm) ? tuple.norm(mc) : 1.0
+end
+
 ################
 ## main function to extract physical information
 ################
-function get_value_observable(dqmcs, key::Symbol, Nb::Int,  my_lvl::Int;  kwargs...)
-    μ_array, σ_array=make_arrays(dqmcs, key,   my_lvl)
-    μ_vec, σ_vec=mean_std_error_combined(μ_array, σ_array, Nb)
-    μ_val, σ_val=value_observable(dqmcs[1], key, μ_vec, σ_vec ; kwargs...)
+
+"""
+    get_value_observable(dqmcs, key::Symbol, Nb::Int,  my_lvl::Int;  kwargs...)
+
+The computation of an observable corresponding to `key` with binning level `my_lvl` happens in three steps.\\
+First, the means (μ) and std_errors (σ) from all walkers are written into an array (`μ_array`, `σ_array`).\\
+Second, the array w.r.t. all walkers is collapsed into one vector (`μ_vec`, `σ_vec`), using the rules of error propagation.\\
+Third, we evaluate the corresponding observable using `value_observable(dqmcs[1], key, μ_vec, σ_vec ; kwargs...)`.
+"""
+function get_value_observable(dqmcs, tuple::NamedTuple, my_lvl::Int,
+        binner_length::Int ;  kwargs...)
+    f_key =first_key(tuple.key)
+    binner = dqmcs[1].measurements[f_key].observable
+    return get_value_observable(binner, dqmcs, tuple, my_lvl, binner_length;  kwargs...)
+end
+
+function get_value_observable(::LogBinner, dqmcs, tuple::NamedTuple, my_lvl::Int,
+        binner_length::Int ;  kwargs...)
+    f_key =first_key(tuple.key) #It is assumed that LogBinner measurements have a single key only.
+
+    n_meas_pw=length(dqmcs[1][f_key].observable)
+    Nb_pw=div(n_meas_pw, 2^my_lvl)  #number of bins per walker
+    
+    μ_array, σ_array=make_arrays(dqmcs, f_key,   my_lvl)
+    μ_vec, σ_vec=mean_std_error_combined(μ_array, σ_array, Nb_pw)
+
+
+    if haskey(tuple, :q)
+        if !haskey(tuple, :idx)
+            μ_val, σ_val =value_observable(dqmcs[1], f_key, μ_vec, σ_vec; q=tuple.q, kwargs...)
+        else
+            μ_val, σ_val =value_observable(dqmcs[1], f_key, μ_vec, σ_vec; q=tuple.q, idx=tuple.idx, kwargs...)
+        end
+    else
+        if !haskey(tuple, :idx)
+            μ_val, σ_val =value_observable(dqmcs[1], f_key, μ_vec, σ_vec; kwargs...)
+        else
+            μ_val, σ_val =value_observable(dqmcs[1], f_key, μ_vec, σ_vec; idx=tuple.idx, kwargs...)
+        end
+    end
+    #μ_val, σ_val=value_observable(dqmcs[1], f_key, μ_vec, σ_vec ; kwargs...)
     return μ_val, σ_val
 end
 
+function get_value_observable(binner::FullBinner,dqmcs, tuple::NamedTuple, my_lvl::Int ,
+        binner_length::Int ;  kwargs...)
+
+    if isa(tuple.key, Symbol)
+        get_value_observable_Scalar(binner ,dqmcs, tuple, my_lvl, binner_length;  kwargs...)
+    else
+        get_value_observable_JackKnife(binner ,dqmcs, tuple, my_lvl, binner_length;  kwargs...)
+    end
+end
+function get_value_observable_Scalar(binner::FullBinner,dqmcs, tuple::NamedTuple, my_lvl::Int ,
+    binner_length::Int ;  norm=get_norm(dqmcs[1], tuple))
+
+    type=eltype(dqmcs[1].measurements[tuple.key].observable.x[1])
+    all_values=FullBinner(type)
+    for walker in eachindex(dqmcs)
+        append!(all_values, dqmcs[walker].measurements[tuple.key].observable.x)
+    end
+
+    return mean(all_values) *norm, std_error(all_values, binner_length) *norm
+end
+
+function get_value_observable_JackKnife(binner::FullBinner,dqmcs, tuple::NamedTuple, my_lvl::Int ,
+        binner_length::Int ;  norm=get_norm(dqmcs[1], tuple))
+
+    keys=tuple.key
+    all_vectors = map(keys) do key
+        type=typeof(dqmcs[1].measurements[key].observable.x[1])
+        full_vector=Vector{type}(undef, 0)
+        for walker in eachindex(dqmcs)
+            full_vector=vcat(full_vector, dqmcs[walker].measurements[key].observable.x)
+        end
+        return full_vector
+    end
+    binned_vectors = prebinning(binner_length, all_vectors...)
+
+
+    μ_g, σJackKnife_g = jackknife(tuple.fcn, binned_vectors...)
+
+
+    return μ_g *norm, σJackKnife_g *norm
+end
 ################
 ## main function to compute order parameters
 ################
 
+"""
+    get_OP_value(dqmcs, key::Symbol, Nb::Int,  my_lvl::Int;  vec=[])
+
+Computes the mean of the absolute value of the measured order parameter (OP).
+Note that by default, OPs are saved in FullBinners, such that one can look at histograms.
+"""
 function get_OP_value(dqmcs, key::Symbol, Nb::Int,  my_lvl::Int;  vec=[])
 
     N_worker=length(dqmcs)
@@ -161,6 +260,14 @@ function OP_push!(obs::FullBinner, obs_val, vec, ::Val{2})
     push!(obs, sqrt(abs2(obs_val[vec[1]])+abs2(obs_val[vec[2]])))
     return nothing
 end
+
+
+
+
+
+
+
+
 
 ################
 ## evaluating observables using HS-fields ϕ

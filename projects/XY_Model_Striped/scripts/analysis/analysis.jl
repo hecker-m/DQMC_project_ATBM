@@ -8,14 +8,16 @@ include("../../../../src/Analysis_Fcns/load_fcns.jl")
 Us=[0.4, 0.6, 0.8, 0.9, 1.0, 1.1, 1.3, 1.6, 2.0, 2.4]
 #βs=[ 2, ]
 βs=[ 1, 2, 2.25, 2.5, 2.75, 3, 3.5, 4, 4.5, 5, 5.5, 6, 7, 8, 10, 20]
-paras=[(L=10, β=β0, U=U0, Pe=true) for U0 in Us, β0 in βs][:]
+paras=[(L=8, β=β0, U=U0, Pe=true) for U0 in Us, β0 in βs][:]
 
 #######
 # to save the computed dataframe
 #######
 save_bool=true;
-save_path="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/DQMC_project_ATBM/projects/IsingX_Striped/figures/dataframes/"
-save_name="L10_Eps_0"
+save_path="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/DQMC_project_ATBM/projects/XY_Model_Striped/figures/dataframes/"
+my_ϵ="_eps_0pc"
+save_name="L8" * my_ϵ
+
 
 #######
 ## initialize DataFrame for measurements of
@@ -31,6 +33,14 @@ my_keys=[(key=:occ, q=(0,0)), (key=:CDS, q=(0,0)),
     (key=:SDS_Mx_x, q=float.((π,0))), (key=:SDS_Mx_x, q=float.((0,π))),
     (key=:SDC_Mx_x, q=float.((π,0))), (key=:SDC_Mx_x, q=float.((0,π))),
     (key=:SDC_Mx_x, q=float.((0,0))),
+    (key=:SDS_Mx_y, q=(0,0)), (key=:SDS_Mx_y, q=float.((π,π))),
+    (key=:SDS_Mx_y, q=float.((π,0))), (key=:SDS_Mx_y, q=float.((0,π))),
+    (key=:SDC_Mx_y, q=float.((π,0))), (key=:SDC_Mx_y, q=float.((0,π))),
+    (key=:SDC_Mx_y, q=float.((0,0))),
+    (key=:SDS_Mx_z, q=(0,0)), (key=:SDS_Mx_z, q=float.((π,π))),
+    (key=:SDS_Mx_z, q=float.((π,0))), (key=:SDS_Mx_z, q=float.((0,π))),
+    (key=:SDC_Mx_z, q=float.((π,0))), (key=:SDC_Mx_z, q=float.((0,π))),
+    (key=:SDC_Mx_z, q=float.((0,0))),
     (key=:PDS_s, q=float.((0,0))),   (key=:PDS_s, q=float.((π,0))),
     (key=:PDS_spm, q=(0,0)), (key=:PDS_spm, q=float.((π,0))),
     (key=:PDS_XX, q=(0,0)), (key=:PDS_YYzz, q=(0,0)),
@@ -55,7 +65,7 @@ my_OP_keys=[(key=:B1_OP , ), (key=:B1_proxy_OP, ),
     (key=:A1p_OP, ), (key=:A1p_proxy_OP, vector=[1]),
     (key=:A1p_proxy_OP, vector=[2]), (key=:Mx_X_OP, vector=[1]),
     (key=:Mx_X_OP, vector=[2]), (key=:Mx_X_OP, vector=[3, 4]), 
-    (key=:Δ_Zy_bil_OP, vector=[1])]
+    (key=:Δ_Zy_bil_OP, vector=[1]), (key=:B1p_OP_z, )]
 
 df_OP_cols=(L=Int[], T=Float64[], U=Float64[], B=Int[]);
 for n in eachindex(my_OP_keys)
@@ -88,12 +98,12 @@ for _para in eachindex(paras)
     haskey(paras[_para], :id) ? jobid=paras[_para].id : jobid = 0;
     N=L^2;
     Nworker=10;
-    path="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/DQMC_project_ATBM/projects/IsingX_Striped/run_saves/";
+    path="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/DQMC_project_ATBM/projects/XY_Model_Striped/run_saves/";
     dqmcs = []
 
     @time begin n_workers=_load(dqmcs, L, T, β, U, peierls, therm, sweeps, Nworker, 
         haskey(paras[_para], :β), jobid;
-        path=path, prefix_folder="D_", prefix_file="D_IsX_",
+        path=path, prefix_folder="D_", prefix_file="D_XY_", eps= my_ϵ,
         _recorder=false, _th_meas=false, _meas=true);
     end
     n_workers != Nworker ? println("Only $(n_workers) finished for parameters $(_para) !!!!") : nothing ;

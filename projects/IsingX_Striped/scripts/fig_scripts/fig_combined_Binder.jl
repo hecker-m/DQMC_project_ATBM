@@ -1,9 +1,9 @@
-include("../../../../src/MonteCarlo.jl_modified/src/my_files/helpful_fcns.jl")
+#include("../../../../src/MonteCarlo.jl_modified/src/my_files/helpful_fcns.jl")
 
 df_Binder=sort(df_Binder, [:U, :T, :B, :L]);
 df_Binder_LU=sort(unique(df_Binder[:,[:U,:L]]),:U)
 
-for U0 in [1.0, 1.1, 1.3, 1.6, 2.0]
+for U0 in [1.0, 1.1, 1.2, 1.3, 1.4, 1.6, 2.0]
 
 
 ################
@@ -42,7 +42,7 @@ axislegend( position=(1, 1))
 ################
 top=Axis(fig[2, 1], xlabel=L"$T/t$", ylabel=L"$\mathrm{nem.\,Binder}\;U_L$", 
     xlabelsize=30, ylabelsize=30,
-    xticklabelsize=20, yticklabelsize=20, limits= (nothing, (-1.5,1)))
+    xticklabelsize=20, yticklabelsize=20, limits= (nothing, (-2,0.5)))
 
     CairoMakie.translate!(vlines!(top, [xx/10 for xx in 1:2:9], color = :gray, linewidth=0.2), 0, 0, -0.8)
     #CairoMakie.translate!(hlines!(top, [0.02], color = :gray,linewidth=0.2), 0, 0, -0.8)
@@ -65,7 +65,7 @@ for (idx, (Us, Ls)) in enumerate(zip(df_Binder_LU[:,:U],df_Binder_LU[:,:L]))
 end
 
 display(fig)
-CairoMakie.save(joinpath(p, "Binder_Combined_U_" * to_string(U0) * ".png"), fig)
+CairoMakie.save(joinpath(p, "Binder_Combined_U_" * MonteCarlo.to_string(U0) * ".png"), fig)
 
 
 end

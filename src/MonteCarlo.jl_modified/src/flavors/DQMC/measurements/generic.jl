@@ -480,6 +480,20 @@ function apply!(
 end
 
 function apply!(
+        temp::Array, iter::EachSitePair_summed, measurement, mc::DQMC, 
+        packed_greens, weight = 1.0)
+    lat=lattice(mc)
+    @timeit_debug "apply!(::EachSitePair_summed, ::$(typeof(measurement.kernel)))" begin
+        @inbounds @fastmath for σ in measurement.flavor_iterator #if only a number, there is no σ iteration
+            for i in eachindex(lat), j in eachindex(lat)
+                temp[1] += weight * measurement.kernel(mc, mc.model, (i, j), packed_greens, σ)
+            end
+        end 
+    end
+    nothing
+end
+
+function apply!(
         temp::Array, iter::EachSitePairByDistance, measurement, mc::DQMC, 
         packed_greens, weight = 1.0
     )
@@ -594,7 +608,7 @@ function apply!(
 
                             # println((dx, dy, i, j, s1, t1, s2, t2))
                             temp[dx, dy, i, j] += weight * measurement.kernel(
-                                mc, mc.model, (s1, t1, s2, t2), packed_greens, σ
+                                mc, mc.model, (s1, t1, s2, t2), packed_greens, σ    #(s1, t1, s2, t2)= (r′, r′+ b1, r =r′+d, r+b2)
                             )
                         end
                     end

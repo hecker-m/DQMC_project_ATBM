@@ -17,8 +17,9 @@ paras=[(L=8, β=β0, U=U0, Pe=true) for U0 in Us, β0 in βs][:]
 # to save the computed dataframe
 #######
 save_bool=true;
-save_path="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/DQMC_project_ATBM/projects/IsingX_Striped/figures/dataframes/"
-save_name="L8_Eps_0"
+save_path="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/DQMC_project_ATBM/projects/XY_Model_Striped/figures/dataframes/"
+my_ϵ="_eps_0pc"
+save_name="L8" * my_ϵ
 
 #######
 ## initialize DataFrame for measurements of
@@ -26,7 +27,8 @@ save_name="L8_Eps_0"
 #######
 my_keys=[(key=:SDC_A1, q=(0,0)), (key=:SDS_A1, q=(0,0)), 
     (key=:NemC, q=(0,0)), (key=:NemS, q=(0,0)), 
-    (key=:A1p_dQ_C, q=(0,0)), (key=:A1p_dQ_S, q=(0,0))]
+    (key=:A1p_dQ_C, q=(0,0)), (key=:A1p_dQ_S, q=(0,0)),
+    (key=:B1p_dQ_C, q=(0,0)), (key=:B1p_dQ_S, q=(0,0))]
 
 df_ϕ_cols=(L=Int[], T=Float64[], U=Float64[], B=Int[]);
 for n in eachindex(my_keys)
@@ -43,7 +45,7 @@ df_ϕ= DataFrame(df_ϕ_cols)
 ## order parameter measurements
 #######
 my_OP_keys=[(key=:Mx_OP , ), (key=:B1_OP , ),
-    (key=:A1p_OP, )]
+    (key=:A1p_OP, ), (key=:B1p_z_OP, )]
 
 df_ϕ_OP_cols=(L=Int[], T=Float64[], U=Float64[], B=Int[]);
 for n in eachindex(my_OP_keys)
@@ -96,12 +98,12 @@ for _para in eachindex(paras)
     haskey(paras[_para], :id) ? jobid=paras[_para].id : jobid = 0;
     N=L^2;
     Nworker=10;
-    path="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/DQMC_project_ATBM/projects/IsingX_Striped/run_saves/";
+    path="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/DQMC_project_ATBM/projects/XY_Model_Striped/run_saves/";
     dqmcs = []
 
     @time begin n_workers=_load(dqmcs, L, T, β, U, peierls, therm, sweeps, Nworker, 
         haskey(paras[_para], :β), jobid;
-        path=path, prefix_folder="D_", prefix_file="D_IsX_",
+        path=path, prefix_folder="D_", prefix_file="D_XY_",  eps= my_ϵ,
         _recorder=true, _th_meas=false, _meas=true);
     
     n_workers != Nworker ? println("Only $(n_workers) finished for parameters $(_para) !!!!") : nothing ;
@@ -114,13 +116,13 @@ for _para in eachindex(paras)
     global my_values=get_observable_using_ϕ(dqmcs,  Val(:Q0πQπ0))
     println("done with set $(_para)a")
     vec=[L, T, U, Int(peierls)]
-    for ν in [2, 3, 6, 7, 10, 11]
+    for ν in [2, 3, 6, 7, 10, 11, 14, 15]
         append!(vec, [mean(my_values[ν]), std_error(my_values[ν], binner_length)])
     end
     push!(df_ϕ, vec)
 
     vec_OP=[L, T, U, Int(peierls)]
-    for ν in [1, 5, 9]
+    for ν in [1, 5, 9, 13]
         append!(vec_OP, [mean(my_values[ν]), std_error(my_values[ν], binner_length)])
     end
     push!(df_ϕ_OP, vec_OP)

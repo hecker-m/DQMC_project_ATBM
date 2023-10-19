@@ -220,3 +220,29 @@ function hopping_directions(l::Lattice{N}, ϵ = 1e-6, lattice_directions = direc
         error("The given lattice is too small to include all hopping directions.")
     end
 end
+
+"""
+    hopping_directions_to_bond_idx(dirs::Vector{Vector}[, ϵ = 1e-6])
+
+Returns the indices of every hopping direction defined on the lattice. (This 
+includes hoppings beyond NN if they are available.)
+"""
+hopping_directions_to_bond_idx(dirs::Vector{T}, l::Lattice{N}, ϵ = 1e-6) where {N, T} = hopping_directions_to_bond_idx([dirs, ], l, ϵ) ;
+function hopping_directions_to_bond_idx(dirs::Vector{Vector{T}}, l::Lattice{N}, ϵ = 1e-6) where {N, T}
+    uc = unitcell(l)
+    r = Vector{Float64}(undef, N)
+
+    bond_indices = map(dirs) do dir
+
+        findfirst(eachindex(uc.bonds)) do idx
+            bond=uc.bonds[idx]
+            p0 = uc.sites[from(bond)]
+            p1 = uc.sites[to(bond)]
+            shift = sum(bond.uc_shift .* uc.lattice_vectors)
+            @. r = p1 - p0 + shift
+            isapprox(r, dir, atol = ϵ)
+        end
+    end
+    return bond_indices
+
+end

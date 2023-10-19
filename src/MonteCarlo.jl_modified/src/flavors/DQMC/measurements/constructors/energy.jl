@@ -171,6 +171,6 @@ end
 
 
 @bm function measure!(::Nothing, measurement::DQMCMeasurement{typeof(total_energy_kernel)}, mc::DQMC, packed_greens)
-    push!(measurement.observable, real(measurement.kernel(mc, mc.model, nothing, packed_greens, nothing)))
+    push!(measurement.observable, real(measurement.kernel(mc, mc.model, nothing, packed_greens, nothing))/length(lattice(mc)))
     nothing
 end

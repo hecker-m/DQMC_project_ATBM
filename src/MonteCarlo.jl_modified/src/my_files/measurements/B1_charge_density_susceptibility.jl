@@ -1,59 +1,3 @@
-###########################
-### lattice iterator for B1 charge density susceptibility
-###########################
-"""
-    EachSitePair_B1()
-
-Creates an iterator template which returns every pair of sites `(s1, s2)` with 
-`s1, s2 ∈ 1:Nsites`.
-"""
-struct EachSitePair_B1 <: DirectLatticeIterator end
-EachSitePair_B1(::MonteCarloFlavor) = EachSitePair_B1()
-output_size(::EachSitePair_B1, l::Lattice) = (1, )
-
-_length(::EachSitePair_B1, l::Lattice) = 1
-
-
-
-
-
-function apply!(
-    temp::Array, iter::EachSitePair_B1, measurement, mc::DQMC, 
-    packed_greens, weight = 1.0
-    )
-    @timeit_debug "apply!(::EachSitePair_B1, ::$(typeof(measurement.kernel)))" begin
-        lat = lattice(mc)
-        srcdir2trg = lat[:Bravais_srcdir2trg]::Matrix{Int}
-
-        N = length(Bravais(lat))  #in TwoBandModel N=L^2
-        L= lat.Ls[1]
-                  @inbounds @fastmath for i in eachindex(lat)
-                    iPa1=srcdir2trg[i, 2]           # i + a1
-                    iMa1=srcdir2trg[i, 1 + L-1]     # i - a1
-                    iPa2=srcdir2trg[i, 1 + L]       # i + a2
-                    iMa2=srcdir2trg[i,1+L*L-L]  # i - a2
-
-                          @simd for k in eachindex(lat)
-                                kPa1=srcdir2trg[k, 2]           # k + a1
-                                kMa1=srcdir2trg[k, 1 + L-1]     # k - a1
-                                kPa2=srcdir2trg[k, 1 + L]       # k + a2
-                                kMa2=srcdir2trg[k, 1 + L*L-L]  # k - a2
-                                   
-                                temp[1] += 0.25 * weight *measurement.kernel(mc, mc.model, 
-                                (i, iPa1, iMa1, iPa2, iMa2, k, kPa1, kMa1, kPa2, kMa2), packed_greens, 4)
-                          end
-                  end
-    end
-    return 
-end
-
-
-@inline function finalize_temp!(::EachSitePair_B1, m, mc)
-    m.temp ./= (length(lattice(mc))^2)  # *1/N^4
-end
-@inline function commit!(::EachSitePair_B1, m) 
-    push!(m.observable, m.temp[1])
-end
 
 ###########################
 ### B1_charge_density susceptibility 
@@ -178,17 +122,22 @@ end
     id = I[G0l.k, G0l.l] 
 
 
-    return real(2*G0l.val[kMa2, i]*(Gl0.val[iMa1, k] - Gl0.val[iMa2, k] + Gl0.val[iPa1, k] - Gl0.val[iPa2, k]) + 
-    2*G0l.val[kMa1, i]*(-Gl0.val[iMa1, k] + Gl0.val[iMa2, k] - Gl0.val[iPa1, k] + Gl0.val[iPa2, k]) + 
+    return 2*real(-(G0l.val[kPa1, i]*Gl0.val[iMa1, k]) + G0l.val[kPa2, i]*Gl0.val[iMa1, k] + G0l.val[kPa1, i]*Gl0.val[iMa2, k] - G0l.val[kPa2, i]*Gl0.val[iMa2, k] - G0l.val[kPa1, i]*Gl0.val[iPa1, k] + 
+    G0l.val[kPa2, i]*Gl0.val[iPa1, k] + G0l.val[kMa2, i]*(Gl0.val[iMa1, k] - Gl0.val[iMa2, k] + Gl0.val[iPa1, k] - Gl0.val[iPa2, k]) + G0l.val[kPa1, i]*Gl0.val[iPa2, k] - 
+    G0l.val[kPa2, i]*Gl0.val[iPa2, k] + G0l.val[kMa1, i]*(-Gl0.val[iMa1, k] + Gl0.val[iMa2, k] - Gl0.val[iPa1, k] + Gl0.val[iPa2, k]) - 
     (G0l.val[kMa1 + N, i] - G0l.val[kMa2 + N, i] + G0l.val[kPa1 + N, i] - G0l.val[kPa2 + N, i])*(Gl0.val[iMa1, k + N] - Gl0.val[iMa2, k + N] + Gl0.val[iPa1, k + N] - 
-    Gl0.val[iPa2, k + N]) + (G0l.val[kMa1, i + N] - G0l.val[kMa2, i + N] + G0l.val[kPa1, i + N] - G0l.val[kPa2, i + N])*
-    (Gl0.val[iMa1 + N, k] - Gl0.val[iMa2 + N, k] + Gl0.val[iPa1 + N, k] - Gl0.val[iPa2 + N, k]) + 
+      Gl0.val[iPa2, k + N]) - (G0l.val[kMa1, i + N] - G0l.val[kMa2, i + N] + G0l.val[kPa1, i + N] - G0l.val[kPa2, i + N])*
+     (Gl0.val[iMa1 + N, k] - Gl0.val[iMa2 + N, k] + Gl0.val[iPa1 + N, k] - Gl0.val[iPa2 + N, k]) - 
     (G0l.val[kMa1 + N, i + N] - G0l.val[kMa2 + N, i + N] + G0l.val[kPa1 + N, i + N] - G0l.val[kPa2 + N, i + N])*
-    (Gl0.val[iMa1 + N, k + N] - Gl0.val[iMa2 + N, k + N] + Gl0.val[iPa1 + N, k + N] - Gl0.val[iPa2 + N, k + N]) + 
-    2*(G0l.val[kPa2, i]*(Gl0.val[iMa1, k] - Gl0.val[iMa2, k] + Gl0.val[iPa1, k] - Gl0.val[iPa2, k]) + 
-    G0l.val[kPa1, i]*(-Gl0.val[iMa1, k] + Gl0.val[iMa2, k] - Gl0.val[iPa1, k] + Gl0.val[iPa2, k]) + 
-    id*(Gl0.val[iMa1, k] - Gl0.val[iMa2, k] + Gl0.val[iPa1, k] - Gl0.val[iPa2, k] + Gl0.val[iMa1 + N, k + N] - Gl0.val[iMa2 + N, k + N] + Gl0.val[iPa1 + N, k + N] - 
-        Gl0.val[iPa2 + N, k + N])*(I[kMa1, i] - I[kMa2, i] + I[kPa1, i] - I[kPa2, i])))+
+     (Gl0.val[iMa1 + N, k + N] - Gl0.val[iMa2 + N, k + N] + Gl0.val[iPa1 + N, k + N] - Gl0.val[iPa2 + N, k + N]) + id*Gl0.val[iMa1, k]*I[kMa1, i] - 
+    id*Gl0.val[iMa2, k]*I[kMa1, i] + id*Gl0.val[iPa1, k]*I[kMa1, i] - id*Gl0.val[iPa2, k]*I[kMa1, i] + id*Gl0.val[iMa1 + N, k + N]*I[kMa1, i] - 
+    id*Gl0.val[iMa2 + N, k + N]*I[kMa1, i] + id*Gl0.val[iPa1 + N, k + N]*I[kMa1, i] - id*Gl0.val[iPa2 + N, k + N]*I[kMa1, i] - id*Gl0.val[iMa1, k]*I[kMa2, i] + 
+    id*Gl0.val[iMa2, k]*I[kMa2, i] - id*Gl0.val[iPa1, k]*I[kMa2, i] + id*Gl0.val[iPa2, k]*I[kMa2, i] - id*Gl0.val[iMa1 + N, k + N]*I[kMa2, i] + 
+    id*Gl0.val[iMa2 + N, k + N]*I[kMa2, i] - id*Gl0.val[iPa1 + N, k + N]*I[kMa2, i] + id*Gl0.val[iPa2 + N, k + N]*I[kMa2, i] + id*Gl0.val[iMa1, k]*I[kPa1, i] - 
+    id*Gl0.val[iMa2, k]*I[kPa1, i] + id*Gl0.val[iPa1, k]*I[kPa1, i] - id*Gl0.val[iPa2, k]*I[kPa1, i] + id*Gl0.val[iMa1 + N, k + N]*I[kPa1, i] - 
+    id*Gl0.val[iMa2 + N, k + N]*I[kPa1, i] + id*Gl0.val[iPa1 + N, k + N]*I[kPa1, i] - id*Gl0.val[iPa2 + N, k + N]*I[kPa1, i] + 
+    id*(-Gl0.val[iMa1, k] + Gl0.val[iMa2, k] - Gl0.val[iPa1, k] + Gl0.val[iPa2, k] - Gl0.val[iMa1 + N, k + N] + Gl0.val[iMa2 + N, k + N] - Gl0.val[iPa1 + N, k + N] + 
+      Gl0.val[iPa2 + N, k + N])*I[kPa2, i])+
         4*real(G00.val[kMa1, k] - G00.val[kMa2, k] + G00.val[kPa1, k] - G00.val[kPa2, k] + G00.val[kMa1 + N, k + N] - G00.val[kMa2 + N, k + N] + G00.val[kPa1 + N, k + N] - 
         G00.val[kPa2 + N, k + N])*real(Gll.val[iMa1, i] - Gll.val[iMa2, i] + Gll.val[iPa1, i] - Gll.val[iPa2, i] + Gll.val[iMa1 + N, i + N] - Gll.val[iMa2 + N, i + N] + 
         Gll.val[iPa1 + N, i + N] - Gll.val[iPa2 + N, i + N]) 

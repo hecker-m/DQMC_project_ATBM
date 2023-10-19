@@ -45,8 +45,13 @@ PartialGlobalFlip(mc::DQMC, model::Model) = PartialGlobalFlip(1.0,  0, mc.parame
 PartialGlobalFlip() = PartialGlobalFlip(1.0,  0, 10000)
 
 name(::PartialGlobalFlip) = "PartialGlobalFlip"
-#TODO: load (and save) needs to be adjusted
-_load(::FileLike, ::Val{:PartialGlobalFlip}) = PartialGlobalFlip()
+function _save(f::FileLike, name::String, update::PartialGlobalFlip)
+    write(f, "$name/tag", :PartialGlobalFlip)
+    write(f, "$name/p", update.p)
+    write(f, "$name/count", update.count)
+    write(f, "$name/full_update_interval", update.full_update_interval)
+end
+_load(f::FileLike, ::Val{:PartialGlobalFlip}) = PartialGlobalFlip(f["p"], f["count"], f["full_update_interval"])
 
 function init!(mc, u::PartialGlobalFlip)
     resize!(u.indices, length(lattice(mc)))
@@ -101,8 +106,13 @@ pGlobalXorYshift(mc::DQMC, model::Model) = pGlobalXorYshift(1.0,  0, mc.paramete
 pGlobalXorYshift() = pGlobalXorYshift(1.0,  0, 10000)
 
 name(::pGlobalXorYshift) = "pGlobalXorYshift"
-#TODO: load (and save) needs to be adjusted
-_load(::FileLike, ::Val{:pGlobalXorYshift}) = pGlobalXorYshift()
+function _save(f::FileLike, name::String, update::pGlobalXorYshift)
+    write(f, "$name/tag", :pGlobalXorYshift)
+    write(f, "$name/p", update.p)
+    write(f, "$name/count", update.count)
+    write(f, "$name/full_update_interval", update.full_update_interval)
+end
+_load(f::FileLike, ::Val{:pGlobalXorYshift}) = pGlobalXorYshift(f["p"], f["count"], f["full_update_interval"])
 
 function init!(mc, u::pGlobalXorYshift)
     L= mc.model.l.Ls[1]
@@ -196,7 +206,13 @@ SpatialStaggeredFlip(mc::DQMC, model::Model) = SpatialStaggeredFlip(1.0,  0, mc.
 SpatialStaggeredFlip() = SpatialStaggeredFlip(1.0,  0, 10000)
 
 name(::SpatialStaggeredFlip) = "SpatialStaggeredFlip"
-_load(::FileLike, ::Val{:SpatialStaggeredFlip}) = SpatialStaggeredFlip()
+function _save(f::FileLike, name::String, update::SpatialStaggeredFlip)
+    write(f, "$name/tag", :SpatialStaggeredFlip)
+    write(f, "$name/p", update.p)
+    write(f, "$name/count", update.count)
+    write(f, "$name/full_update_interval", update.full_update_interval)
+end
+_load(f::FileLike, ::Val{:SpatialStaggeredFlip}) = SpatialStaggeredFlip(f["p"], f["count"], f["full_update_interval"])
 
 function init!(mc, u::SpatialStaggeredFlip)
     resize!(u.indices, length(lattice(mc)))
@@ -244,7 +260,13 @@ SpatialStripedXorYFlip(mc::DQMC, model::Model) = SpatialStripedXorYFlip(1.0,  0,
 SpatialStripedXorYFlip() = SpatialStripedXorYFlip(1.0,  0, 10000)
 
 name(::SpatialStripedXorYFlip) = "SpatialStripedXorYFlip"
-_load(::FileLike, ::Val{:SpatialStripedXorYFlip}) = SpatialStripedXorYFlip()
+function _save(f::FileLike, name::String, update::SpatialStripedXorYFlip)
+    write(f, "$name/tag", :SpatialStripedXorYFlip)
+    write(f, "$name/p", update.p)
+    write(f, "$name/count", update.count)
+    write(f, "$name/full_update_interval", update.full_update_interval)
+end
+_load(f::FileLike, ::Val{:SpatialStripedXorYFlip}) = SpatialStripedXorYFlip(f["p"], f["count"], f["full_update_interval"])
 
 function init!(mc, u::SpatialStripedXorYFlip)
     resize!(u.indices, length(lattice(mc)))
@@ -317,7 +339,13 @@ AddShiftedConfiguration(mc::DQMC, model::Model) = AddShiftedConfiguration(1.0,  
 AddShiftedConfiguration() = AddShiftedConfiguration(1.0,  0, 10000)
 
 name(::AddShiftedConfiguration) = "AddShiftedConfiguration"
-_load(::FileLike, ::Val{:AddShiftedConfiguration}) = AddShiftedConfiguration()
+function _save(f::FileLike, name::String, update::AddShiftedConfiguration)
+    write(f, "$name/tag", :AddShiftedConfiguration)
+    write(f, "$name/p", update.p)
+    write(f, "$name/count", update.count)
+    write(f, "$name/full_update_interval", update.full_update_interval)
+end
+_load(f::FileLike, ::Val{:AddShiftedConfiguration}) = AddShiftedConfiguration(f["p"], f["count"], f["full_update_interval"])
 
 function init!(mc, u::AddShiftedConfiguration)
     # resize!(u.indices, length(lattice(mc)))
@@ -380,7 +408,13 @@ AddStaggeredConfiguration(mc::DQMC, model::Model) = AddStaggeredConfiguration(1.
 AddStaggeredConfiguration() = AddStaggeredConfiguration(1.0,  0, 10000)
 
 name(::AddStaggeredConfiguration) = "AddStaggeredConfiguration"
-_load(::FileLike, ::Val{:AddStaggeredConfiguration}) = AddStaggeredConfiguration()
+function _save(f::FileLike, name::String, update::AddStaggeredConfiguration)
+    write(f, "$name/tag", :AddStaggeredConfiguration)
+    write(f, "$name/p", update.p)
+    write(f, "$name/count", update.count)
+    write(f, "$name/full_update_interval", update.full_update_interval)
+end
+_load(f::FileLike, ::Val{:AddStaggeredConfiguration}) = AddStaggeredConfiguration(f["p"], f["count"], f["full_update_interval"])
 
 function init!(mc, u::AddStaggeredConfiguration)
     resize!(u.indices, length(lattice(mc)))
@@ -435,7 +469,13 @@ LinWeightedStaggFlip(mc::DQMC, model::Model) = LinWeightedStaggFlip(1.0,  0, mc.
 LinWeightedStaggFlip() = LinWeightedStaggFlip(1.0,  0, 10000)
 
 name(::LinWeightedStaggFlip) = "LinWeightedStaggFlip"
-_load(::FileLike, ::Val{:LinWeightedStaggFlip}) = LinWeightedStaggFlip()
+function _save(f::FileLike, name::String, update::LinWeightedStaggFlip)
+    write(f, "$name/tag", :LinWeightedStaggFlip)
+    write(f, "$name/p", update.p)
+    write(f, "$name/count", update.count)
+    write(f, "$name/full_update_interval", update.full_update_interval)
+end
+_load(f::FileLike, ::Val{:LinWeightedStaggFlip}) = LinWeightedStaggFlip(f["p"], f["count"], f["full_update_interval"])
 
 function init!(mc, u::LinWeightedStaggFlip)
     resize!(u.indices, length(lattice(mc)))
@@ -496,7 +536,14 @@ LinWeightedFlip(mc::DQMC, model::Model) = LinWeightedFlip(1.0,  0, mc.parameters
 LinWeightedFlip() = LinWeightedFlip(1.0,  0, 10000)
 
 name(::LinWeightedFlip) = "LinWeightedFlip"
-_load(::FileLike, ::Val{:LinWeightedFlip}) = LinWeightedFlip()
+function _save(f::FileLike, name::String, update::LinWeightedFlip)
+    write(f, "$name/tag", :LinWeightedFlip)
+    write(f, "$name/p", update.p)
+    write(f, "$name/count", update.count)
+    write(f, "$name/full_update_interval", update.full_update_interval)
+end
+_load(f::FileLike, ::Val{:LinWeightedFlip}) = LinWeightedFlip(f["p"], f["count"], f["full_update_interval"])
+
 
 function init!(mc, u::LinWeightedFlip)
     resize!(u.indices, length(lattice(mc)))

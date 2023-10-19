@@ -122,7 +122,22 @@ end
 _length(::EachSitePair, l::Lattice) = length(l)^2
 _eltype(::EachSitePair, l::Lattice) = NTuple{2, Int}
 
+"""
+    EachSitePair_summed()
 
+Creates an iterator template which returns the sum over every pair of sites `(s1, s2)` with 
+`s1, s2 ∈ 1:Nsites`, i.e. the observable is a scalar.
+"""
+struct EachSitePair_summed <: DirectLatticeIterator end
+EachSitePair_summed(::MonteCarloFlavor) = EachSitePair_summed()
+output_size(::EachSitePair_summed, l::Lattice) = (1, )
+
+@inline function finalize_temp!(::EachSitePair_summed, m, mc)
+    m.temp ./= length(lattice(mc))^2
+end
+@inline function commit!(::EachSitePair_summed, m) 
+    push!(m.observable, m.temp[1])
+end
 ################################################################################
 ### DeferredLatticeIterator
 ################################################################################
@@ -625,6 +640,16 @@ function EachBondPairByBravaisDistance(l::Lattice)
         end
     end
 
+    # shift_dir=[1, 0]
+    # normalize!(shift_dir)
+
+    # dirs = directions(l)
+    # dir_idxs = filter(hopping_directions(l)) do i
+    #     dot(dirs[i], shift_dir) > 1e-6
+    # end
+    # bond_idxs = hopping_directions_to_bond_idx(dirs[dir_idxs], l)
+
+    #EachBondPairByBravaisDistance([i for i in 1:length(l.unitcell.bonds)])
     return EachBondPairByBravaisDistance(accepted)
 end
 
@@ -686,8 +711,3 @@ output_size(::Sum, l::Lattice) = (1,)
 #     symmetries::NTuple{N, Vector{T}}
 # end
 
-const _all_lattice_iterator_types = [
-    EachSiteAndFlavor, EachSite, EachSitePair, EachSiteByDistance,
-    OnSite, EachLocalQuadByDistance, EachLocalQuadBySyncedDistance,
-    Sum
-]

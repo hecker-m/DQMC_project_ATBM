@@ -1,13 +1,23 @@
 using Plots, DataFrames, StatsPlots, Query, FileIO, CairoMakie, ColorSchemes, LaTeXStrings, CSV
+include("../../../../src/Analysis_Fcns/large_U_fcns.jl")
 
-p_input="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/DQMC_project_ATBM/projects/IsingX_Striped/scripts/fig_scripts/"
+p_input="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/DQMC_project_ATBM/projects/XY_Model_Striped/scripts/fig_scripts/"
 # p=p_output
-p="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/DQMC_project_ATBM/projects/IsingX_Striped/figures/"
+p="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/DQMC_project_ATBM/projects/XY_Model_Striped/figures/"
+
+L_plot=8;
+peierls=true;
+er_lw=1.2;
+βmax=20;
+Umin=1.9; Umax=2.4;nU=20;
+t=1.0; μ0=1.0*t; μs = [μ0; -μ0]
+muM=1/4*(μs[1]-μs[2]);
+Nϕ=2;
 
 load_bool=true;
 if load_bool
-    load_path="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/DQMC_project_ATBM/projects/IsingX_Striped/figures/dataframes/"
-    load_names=["L8_Eps_0",]
+    load_path="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/DQMC_project_ATBM/projects/XY_Model_Striped/figures/dataframes/"
+    load_names=["L8_eps_0pc",]
     for (ii, load_name) in enumerate(load_names)
         if ii ==1
         global df= CSV.read(joinpath(load_path, "df_" * load_name * ".csv"), DataFrame)
@@ -47,9 +57,6 @@ df_ϕ_OP_LT=sort(unique(df_ϕ_OP[:,[:T,:L]]),:T , rev=true)
 df_ϕ_OP_LU=sort(unique(df_ϕ_OP[:,[:U,:L]]),:U)
 
 
-peierls=true;
-er_lw=1.2;
-βmax=20;
 
 include(p_input * "fig_chi_charge.jl")
 
@@ -59,7 +66,7 @@ include(p_input * "fig_chi_pair.jl")
 include(p_input * "fig_chi_spin.jl")
 #TODO: Magnetic order parameter
 
- include(p_input * "fig_chi_B1_nematic.jl")
+include(p_input * "fig_chi_B1_nematic.jl")
 
 include(p_input * "fig_chi_A1p_bilinear.jl")
 

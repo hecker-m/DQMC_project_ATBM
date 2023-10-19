@@ -66,16 +66,16 @@ end
         packed_greens::_GM4{<: Matrix}, 
         flv::NTuple{2, Int}
     )
-
-    src1, trg1, src2, trg2 = sites
+    #(s1, t1, s2, t2)= (r′, r′+ b1, r =r′+d, r+b2)
+    src1, trg1, src2, trg2 = sites      #src1 = r′+b′, trg1 = r′, src2 =r+b, trg2= r
     G00, G0l, Gl0, Gll = packed_greens
     T = mc.stack.hopping_matrix
     id = I[G0l.k, G0l.l]
 
     N = length(lattice(mc))
-    f1, f2 = flv
-    s1 = src1 + N * (f1 - 1); s2 = src2 + N * (f2 - 1)
-    t1 = trg1 + N * (f1 - 1); t2 = trg2 + N * (f2 - 1)
+    γ, α = flv        
+    s1 = src1 + N * (γ - 1); s2 = src2 + N * (α - 1)
+    t1 = trg1 + N * (γ - 1); t2 = trg2 + N * (α - 1)
 
     # If G is BlockDiagonal T must be too.
     # T should always be hermitian
@@ -86,15 +86,20 @@ end
     T2_ts = conj(T2_st)
 
     output = (
-        (T2_ts * Gll.val[s2, t2] - T2_st * Gll.val[t2, s2]) * 
-        (T1_st * G00.val[t1, s1] - T1_ts * G00.val[s1, t1])
+        (T2_ts * Gll.val[s2, t2] - T2_st * Gll.val[t2, s2]) *   
+        (T1_st * G00.val[t1, s1] - T1_ts * G00.val[s1, t1])     
     ) + (
-        - T2_ts * T1_ts * (id * I[s1, t2] - G0l.val[s1, t2]) * Gl0.val[s2, t1] +
+        - T2_ts * T1_ts * (id * I[s1, t2] - G0l.val[s1, t2]) * Gl0.val[s2, t1] +    
         + T2_ts * T1_st * (id * I[t1, t2] - G0l.val[t1, t2]) * Gl0.val[s2, s1] +
         + T2_st * T1_ts * (id * I[s1, s2] - G0l.val[s1, s2]) * Gl0.val[t2, t1] +
         - T2_st * T1_st * (id * I[s2, t1] - G0l.val[t1, s2]) * Gl0.val[t2, s1] 
     )
-    
+    #(T[r+b2, r] * Gll.val[r, r+b2] - T[r, r+b2] * Gll.val[r+b2, r])
+    #(T[r′, r′+ b1] * G00.val[r′+ b1, r′] -T[r′+ b1, r′] * G00.val[r′, r′+ b1])
+    #- T[r+b2, r] * T[r′+ b1, r′] * (id * I[r′, r+b2] - G0l.val[r′, r+b2]) * Gl0.val[r, r′+ b1]
+    #+ T[r+b2, r] * T[r′, r′+ b1] * (id * I[r′+ b1, r+b2] - G0l.val[r′+ b1, r+b2]) * Gl0.val[r, r′] +
+    #+ T[r, r+b2] * T[r′+ b1, r′] * (id * I[r′, r] - G0l.val[r′, r]) * Gl0.val[r+b2, r′+ b1] +
+    #- T[r, r+b2] * T[r′, r′+ b1] * (id * I[r, r′+ b1] - G0l.val[r′+ b1, r]) * Gl0.val[r+b2, r′] 
     return output
 end
 

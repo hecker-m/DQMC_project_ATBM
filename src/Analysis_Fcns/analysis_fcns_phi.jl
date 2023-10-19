@@ -43,7 +43,7 @@ For different ordering vectors, there is a different number of observables we ca
 `make_binner_array()` generates an array with the appropriate number of FullBinners.
 """
 make_binner_array(::Val{:Qππ}, Nϕ)=[FullBinner(Float64) for i=1:4]
-make_binner_array(::Val{:Q0πQπ0}, Nϕ)= Nϕ==1 ? [FullBinner(Float64) for i=1:12] : [FullBinner(Float64) for i=1:16]
+make_binner_array(::Val{:Q0πQπ0}, Nϕ)= Nϕ==1 ? [FullBinner(Float64) for i=1:(12+1)] : [FullBinner(Float64) for i=1:16]
 
 
 """
@@ -113,6 +113,7 @@ function calc_observables!(binner_array::Array, mc ::DQMC, ϕ_field::Array, ::Va
     β=mc.parameters.beta
 
     ϕQ1Q2= calc_ϕQ1Q2(mc, ϕ_field)
+    ΛA1=calc_ΛA1(mc, ϕ_field)
 
     ϕQ1Q2_OP=Vector{Float64}(undef, Nτ)
     ΦA1=Vector{Float64}(undef, Nτ)
@@ -167,7 +168,12 @@ function calc_observables!(binner_array::Array, mc ::DQMC, ϕ_field::Array, ::Va
     ## #11 is the A1′ bilinear susceptibility 1/(Nτ²)∑_{ℓ,ℓ′} ⟨ ΦA1′(ℓ) ΦA1′(ℓ′)⟩  ± …
     push!(binner_array[11], β*mean(ΦA1p)^2 - 2/(N*U) * mean(ΦA1) + Nϕ/(δτ*N^2 *U^2)) 
     ## #12 for the Binder cumulant, we also need  ⟨ (ΦA1′)⁴ ⟩
-    push!(binner_array[12], mean(ΦA1p .^4)  )
+    push!(binner_array[12], mean(ΦA1p .^4)  -12/(N* δτ *U ) *mean(ΦA1p .* ΦA1p .* ΦA1) +
+        6*(Nϕ +4 )/(N^2* δτ^2 *U^2 ) *mean(ΦA1p .* ΦA1p) + 12/(N^2* δτ^2 *U^2 ) *mean(ΦA1 .* ΦA1) -
+        12*(Nϕ +2 )/(N^3* δτ^3 *U^3 ) *mean(ΦA1) + 3Nϕ*(Nϕ +2 )/(N^4* δτ^4 *U^4 ))
+
+    push!(binner_array[13], U^2 * (mean(ΛA1 .^2) - (Nϕ+2/N)/(δτ*U) * mean(ΛA1) + Nϕ*(Nϕ+2/N)/(4*δτ^2 *U^2))) 
+
     if Nϕ>1
         DA1_ΦB1p=Vector{Float64}(undef, Nτ)
         ΦB1p_OP=zero(Float64)
@@ -188,7 +194,19 @@ function calc_observables!(binner_array::Array, mc ::DQMC, ϕ_field::Array, ::Va
 end
 
 
-
+@inline function calc_ΛA1(mc ::DQMC, ϕ_field::Array)
+    lat=mc.model.l
+    N=length(lat)
+    U=mc.model.U
+    Nτ=mc.parameters.slices
+    ΛA1= zeros(Float64, Nτ)
+    for slice in 1:Nτ    
+        @inbounds @fastmath for i in eachindex(lat)
+            ΛA1[slice] +=  sum(ϕ_field[: ,i ,slice] .^2)
+        end
+    end
+    return ΛA1 ./(2U*N)
+end
 """
 `calc_ϕQ1Q2(mc ::DQMC, ϕ_field::Array)` computes the Fourier transform 
 ϕ[Q=(π,0)] (τ) and ϕ[Q=(0,π)] (τ) returning it as an array ζ=1,..,2*Nϕ and ℓ=1,..,Nτ 

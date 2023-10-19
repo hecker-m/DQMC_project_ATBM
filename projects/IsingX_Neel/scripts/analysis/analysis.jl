@@ -5,9 +5,18 @@ include("../../../../src/Analysis_Fcns/analysis_fcns.jl")
 include("../../../../src/Analysis_Fcns/load_fcns.jl")
 
 
-Us=[0.6, 0.7, 0.8, 1.0, 1.2, 1.3]
-βs=[1, 4, 10, 14, 20]
+# Us=[0.6, 0.7, 0.8, 1.0, 1.2, 1.3]
+# βs=[1, 4, 10, 14, 20]
+Us=[0.7, ]
+βs=[20, ]
 paras=[(L=8, β=β0, U=U0, Pe=true) for U0 in Us, β0 in βs][:]
+
+#######
+# to save the computed dataframe
+#######
+save_bool=false;
+save_path="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/DQMC_project_ATBM/projects/IsingX_Neel/figures/dataframes/"
+save_name="L8" 
 
 
 #######
@@ -19,14 +28,25 @@ my_keys=[(key=:occ, q=(0,0)), (key=:CDS, q=(0,0)),
     (key=:SDS_Mx_x, q=(0,0)), (key=:SDS_Mx_x, q=float.((π,π))),
     (key=:SDS_Mx_y, q=(0,0)), (key=:SDS_Mx_y, q=float.((π,π))),
     (key=:SDS_Mx_z, q=(0,0)), (key=:SDS_Mx_z, q=float.((π,π))),
-    (key=:PDS_s, q=float.((0,0))), (key=:PDS_spm, q=(0,0)), ]
+    (key=:PDS_s, q=float.((0,0))), (key=:PDS_spm, q=(0,0)), 
+    (key=:rho_s, q=(0,0), idx=4), (key=:rho_s, q=(0,0), idx=1),
+    (key=:rho_s, q=(0,0), idx=2), (key=:rho_s, q=(0,0), idx=3),
+    (key=:kx, q=(0,0))]
 
 df_cols=(L=Int[], T=Float64[], U=Float64[], B=Int[]);
 for n in eachindex(my_keys)
-    q1=Int(round(my_keys[n].q[1]/π)) ==0 ? 0 : π;
-    q2=Int(round(my_keys[n].q[2]/π)) ==0 ? 0 : π;
-    name=string(my_keys[n].key) *"_$(q1)$(q2)";
-    Δname="Δ" *string(my_keys[n].key) *"_$(q1)$(q2)";
+    name=string(my_keys[n].key);
+    Δname="Δ" *string(my_keys[n].key) ;
+    if haskey(my_keys[n], :q)
+        q1=Int(round(my_keys[n].q[1]/π)) ==0 ? 0 : π;
+        q2=Int(round(my_keys[n].q[2]/π)) ==0 ? 0 : π;
+        name= name * "_$(q1)$(q2)"
+        Δname= Δname * "_$(q1)$(q2)"
+    end
+    if haskey(my_keys[n], :idx)
+        name= name * "_$(my_keys[n].idx)"
+        Δname= Δname * "_$(my_keys[n].idx)"
+    end
     global df_cols=Base.setindex(df_cols, Float64[], Symbol(name))
     global df_cols=Base.setindex(df_cols, Float64[], Symbol(Δname))
 end
@@ -58,6 +78,7 @@ for n in eachindex(my_OP_keys)
 end
 df_OP= DataFrame(df_OP_cols)
 
+
 #######
 ## load all data and evaluate it
 #######
@@ -73,11 +94,11 @@ for _para in eachindex(paras)
     N=L^2;
     Nworker=10;
     path="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/DQMC_project_ATBM/projects/IsingX_Neel/run_saves/";
-    dqmcs = []
+    global dqmcs = []
 
     @time begin n_workers=_load(dqmcs, L, T, β, U, peierls, therm, sweeps, Nworker, 
         haskey(paras[_para], :β), jobid;
-        path=path, prefix_folder="D2_", prefix_file="DSx2_FP_",
+        path=path, prefix_folder="D2_", prefix_file="DSx_FP_",
         _recorder=false, _th_meas=false, _meas=true);
     end
     n_workers != Nworker ? println("Only $(n_workers) finished for parameters $(_para) !!!!") : nothing ;
@@ -92,7 +113,11 @@ for _para in eachindex(paras)
     for (n, tuple) in enumerate(my_keys)
         n_meas=length(dqmcs[1][tuple.key].observable)
         Nb=div(n_meas, 2^my_lvl)
-        μs[n], σs[n] =get_value_observable(dqmcs, tuple.key, Nb,  my_lvl; q=tuple.q)
+        if !haskey(tuple, :idx)
+            μs[n], σs[n] =get_value_observable(dqmcs, tuple.key, Nb,  my_lvl; q=tuple.q)
+        else
+            μs[n], σs[n] =get_value_observable(dqmcs, tuple.key, Nb,  my_lvl; q=tuple.q, idx=tuple.idx)
+        end
         if tuple.key==:CDS && iszero(tuple.q[1]) && iszero(tuple.q[2])
             μs[n]=μs[n]-N/T*μs[n-1]^2 
         end
@@ -127,8 +152,13 @@ for _para in eachindex(paras)
     push!(df_OP, vec_OP)
 end
 
+
+
 #########
 ## Saving the DataFrames if necessary
 #########
-# CSV.write(joinpath(p, "dataframe.csv"), df)
-# CSV.write(joinpath(p, "dataframe_OP.csv"), df_OP)
+
+if save_bool
+    CSV.write(joinpath(save_path, "df_" * save_name * ".csv"), df)
+    CSV.write(joinpath(save_path, "df_OP_" * save_name * ".csv"), df_OP)
+end

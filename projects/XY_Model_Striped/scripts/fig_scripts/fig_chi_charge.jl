@@ -4,7 +4,7 @@
 ########################
 fig = Figure(resolution = (800, 600))
 top=Axis(fig[1, 1], xlabel=L"$U/t$", ylabel=L"$χ_{\mathrm{charge}} $", ylabelsize=30,
-    xlabelsize=30, title="B=$(Int(peierls)),  L=8")
+    xlabelsize=30, title="B=$(Int(peierls)),  L=$(L_plot)")
 
 CairoMakie.translate!(vlines!(top, [1.0/3, 0.7, 1], color = :gray, linewidth=0.2), 0, 0, -0.8)
 CairoMakie.translate!(hlines!(top, [0.2,0.3, 0.4], color = :gray,linewidth=0.2), 0, 0, -0.8)
@@ -18,8 +18,16 @@ for (idx, (Ts, Ls)) in enumerate(zip(df_LT[:,:T],df_LT[:,:L]))
     # CairoMakie.translate!(eb, 0, 0, -0.5) 
     CairoMakie.scatterlines!(top, dfs[!,:U], dfs[!,:CDS_00] ;  marker = :xcross,
     color = colorschemes[:coolwarm][1-1/Ts/βmax], label = "β=$((1/Ts))", markersize=20)
+
+
+    CairoMakie.lines!(top, range(Umin, Umax,nU), [χ_charge(1/Ts, U/Nϕ, muM) for U in range(Umin, Umax,nU)] ;  
+    linestyle = :dash,   color = colorschemes[:coolwarm][1-1/Ts/βmax])
+
 end
 axislegend( position=(1, 1))
 
 display(fig)
 CairoMakie.save(joinpath(p, "chi_charge.png"), fig)
+
+
+

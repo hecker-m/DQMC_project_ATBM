@@ -13,26 +13,26 @@ df_OP=sort(df_OP, [:U, :T, :B, :L]);
 df_OP_LT=sort(unique(df_OP[:,[:T,:L]]),:T , rev=true) 
 df_OP_LU=sort(unique(df_OP[:,[:U,:L]]),:U) 
 
-df_ϕ=sort(df_ϕ, [:U, :T, :B, :L]);
-df_ϕ_LT=sort(unique(df_ϕ[:,[:T,:L]]),:T, rev=true)
-df_ϕ_LU=sort(unique(df_ϕ[:,[:U,:L]]),:U)
+# df_ϕ=sort(df_ϕ, [:U, :T, :B, :L]);
+# df_ϕ_LT=sort(unique(df_ϕ[:,[:T,:L]]),:T, rev=true)
+# df_ϕ_LU=sort(unique(df_ϕ[:,[:U,:L]]),:U)
 
-df_ϕ_OP=sort(df_ϕ_OP, [:U, :T, :B, :L]);
-df_ϕ_OP_LT=sort(unique(df_ϕ_OP[:,[:T,:L]]),:T , rev=true)
-df_ϕ_OP_LU=sort(unique(df_ϕ_OP[:,[:U,:L]]),:U)
+# df_ϕ_OP=sort(df_ϕ_OP, [:U, :T, :B, :L]);
+# df_ϕ_OP_LT=sort(unique(df_ϕ_OP[:,[:T,:L]]),:T , rev=true)
+# df_ϕ_OP_LU=sort(unique(df_ϕ_OP[:,[:U,:L]]),:U)
 
 
 peierls=true;
 er_lw=1.2;
 βmax=30;
 
-include(p_input * "fig_chi_charge.jl")
+ include(p_input * "fig_chi_charge.jl")
 
-include(p_input * "fig_chi_pair.jl")
+# include(p_input * "fig_chi_pair.jl")
 
-include(p_input * "fig_chi_spin.jl")
+# include(p_input * "fig_chi_spin.jl")
 
-include(p_input * "fig_magn_Binder.jl")
+# include(p_input * "fig_magn_Binder.jl")
 
-
+# include(p_input * "fig_phase_stiffness.jl")
 

@@ -22,6 +22,38 @@ end
     output
 end
 
+@inline Base.@propagate_inbounds function kinetic_energy_kernel_bonds(mc, model, ::Nothing, G::_GM{T}, flv) where {T}
+    return kinetic_energy_kernel_bonds(mc, model, nothing, G, flv, field(mc))
+end
+@inline Base.@propagate_inbounds function kinetic_energy_kernel_bonds(mc, model, 
+    ::Nothing,  G::_GM{<: Matrix}, flv, 
+    ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    # <T> = \sum Tji * (Iij - Gij) = - \sum Tji * (Gij - Iij)
+    T = mc.stack.hopping_matrix
+    l = lattice(mc)
+    N = length(l)
+    Lx, Ly = l.Ls
+    # bond_zero=Bond(1, 1, (0, 0), 0);
+    # bs = copy(l.unitcell.bonds)
+    # push!(bs, bond_zero)
+    bs = l.unitcell.bonds
+
+    modx = get!(l, :modcachex, modcachex)::Vector{Int}
+    mody = get!(l, :modcachey, modcachey)::Vector{Int}
+
+    output = zero(eltype(G.val))
+    @inbounds @fastmath for s1y in 1:Ly, s1x in 1:Lx
+        for (n, b1) in enumerate(bs)
+            j = _sub2ind(l, (s1x, s1y, from(b1)))
+            x, y = b1.uc_shift
+            i = _sub2ind(l, (modx[s1x+x+Lx], mody[s1y+y+Ly], to(b1)))
+            output += 2real(conj(T[i, j]) * (I[i, j] - G.val[i, j]))+
+                2real(conj(T[i+N, j+N]) * (I[i, j] - G.val[i+N, j+N]))
+        end
+    end
+    output
+end
+
 @inline Base.@propagate_inbounds function full_cdc_kernel(
     mc, ::Model, ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
     flv, ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm, Discrete_MBF2_symm})
@@ -904,54 +936,3 @@ end
     real(-(G0l.val[j, i + N]*G0l.val[j + N, i]) + (2*conj(G0l.val[j, i]) + G0l.val[j, i])*G0l.val[j + N, i + N]))
 end
 
-###########################
-### current-current correlations
-###########################
-
-
-@inline Base.@propagate_inbounds function my_cc_kernel(mc, m::Model, sites, G::_GM, flv)
-    return my_cc_kernel(mc, m, sites, (G, G, G, G), flv)
-end
-    
-    
-    # Basic full Matrix
-@inline Base.@propagate_inbounds function my_cc_kernel(
-        mc, ::Model, sites::NTuple{4, Int}, 
-        packed_greens::_GM4{<: Matrix}, 
-        flv::NTuple{2, Int})
-    
-    l, jp, i, j = sites
-    G00, G0l, Gl0, Gll = packed_greens
-    T = mc.stack.hopping_matrix
-    id = I[G0l.k, G0l.l]
-    
-    N = length(lattice(mc))
-    γ, α = flv
-    s1 = l + N * (γ - 1); s2 = i + N * (α - 1)
-    t1 = jp + N * (γ - 1); t2 = j + N * (α - 1)
-    
-    T1_st = T[s1, t1]   #Mt[l γ, j' γ]
-    T1_ts = conj(T1_st) #Mt[j' γ, l γ]
-    T2_st = T[s2, t2]   #Mt[i α, j α]
-    T2_ts = conj(T2_st) #Mt[j α, i α]
-        #(Mt[l γ, j' γ]*G00.val[j' γ, l γ]-Mt[j' γ, l γ]*  G00.val[l γ, j' γ])
-        #*(Mt[j α, i α]*Gll.val[i α, j α] - Mt[i α, j α] * Gll.val[j α, i α])
-        #+ (- Mt[j α, i α] * Mt[j' γ, l γ] * (id * I[l γ, j α] - G0l.val[l γ, j α]) * Gl0.val[i α, j' γ] +
-        #+ Mt[j α, i α] * Mt[l γ, j' γ] * (id * I[j' γ, j α] - G0l.val[j' γ, j α]) * Gl0.val[i α, l γ] +
-        #+ Mt[i α, j α] * Mt[j' γ, l γ] * (id * I[l γ, i α] - G0l.val[l γ, i α]) * Gl0.val[j α, j' γ] +
-        #- Mt[i α, j α] * Mt[l γ, j' γ] * (id * I[i α, j' γ] - G0l.val[j' γ, i α]) * Gl0.val[j α, l γ] )
-    
-        #my notes would require a prefactor 1/4*(j_x-i_x)*(jp_x - l_x)
-    output = (
-        (T1_st * G00.val[t1, s1] - T1_ts * G00.val[s1, t1])*
-        (T2_ts * Gll.val[s2, t2] - T2_st * Gll.val[t2, s2])     
-    ) + (
-        - T2_ts * T1_ts * (id * I[s1, t2] - G0l.val[s1, t2]) * Gl0.val[s2, t1] +
-        + T2_ts * T1_st * (id * I[t1, t2] - G0l.val[t1, t2]) * Gl0.val[s2, s1] +
-        + T2_st * T1_ts * (id * I[s1, s2] - G0l.val[s1, s2]) * Gl0.val[t2, t1] +
-        - T2_st * T1_st * (id * I[s2, t1] - G0l.val[t1, s2]) * Gl0.val[t2, s1] 
-    )
-    
-    return output
-end
-    

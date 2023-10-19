@@ -8,7 +8,7 @@ fig = Figure(resolution = (800, 600))
 top=Axis(fig[1, 1], xlabel=L"$T/t$", ylabel=L"$\mathrm{magn.\,Binder}\;U_L$", 
     xlabelsize=30, ylabelsize=30,
     xticklabelsize=20, yticklabelsize=20, limits= (nothing, nothing),
-    title=L"B=%$(Int(peierls)),\;  L=8:\quad \times \;↔\;  
+    title=L"B=%$(Int(peierls)),\;  L=%$(L_plot):\quad \times \;↔\;  
     \langle \hat{c}\hat{c}.. \rangle, \qquad □ \;↔\;  \langle ϕ.. \rangle")
 
 CairoMakie.translate!(vlines!(top, [1.0/3, 0.7, 1], color = :gray, linewidth=0.2), 0, 0, -0.8)
@@ -38,12 +38,11 @@ CairoMakie.save(joinpath(p, "Binder_Magn_T.png"), fig)
 fig = Figure(resolution = (800, 600))
 top=Axis(fig[1, 1], xlabel=L"$T/t$", ylabel=L"$\mathrm{magn.\,Binder}\;U_L$", 
     xlabelsize=30, ylabelsize=30,
-    xticklabelsize=20, yticklabelsize=20, limits= (nothing, nothing),
-    title=L"B=%$(Int(peierls)),\;  L=8:\quad \times \;↔\;  
+    xticklabelsize=20, yticklabelsize=20, limits= (nothing, (0, 0.7)),
+    title=L"B=%$(Int(peierls)),\;  L=%$(L_plot):\quad \times \;↔\;  
     \langle \hat{c}\hat{c}.. \rangle, \qquad □ \;↔\;  \langle ϕ.. \rangle")
 
 CairoMakie.translate!(vlines!(top, [1.0/3, 0.7, 1], color = :gray, linewidth=0.2), 0, 0, -0.8)
-CairoMakie.translate!(hlines!(top, [0.02], color = :gray,linewidth=0.2), 0, 0, -0.8)
 
 for (idx, (Us, Ls)) in enumerate(zip(df_Binder_LU[:,:U],df_Binder_LU[:,:L]))
     num_T_points=length(df_Binder_LU[:,:U]);
@@ -73,11 +72,10 @@ fig = Figure(resolution = (800, 600))
 top=Axis(fig[1, 1], xlabel=L"$T/t$", ylabel=L"$\mathrm{nem.\,Binder}\;U_L$", 
     xlabelsize=30, ylabelsize=30,
     xticklabelsize=20, yticklabelsize=20, limits= (nothing, (-3,3)),
-    title=L"B=%$(Int(peierls)),\;  L=8:\quad \times \;↔\;  
+    title=L"B=%$(Int(peierls)),\;  L=%$(L_plot):\quad \times \;↔\;  
     \langle \hat{c}\hat{c}.. \rangle, \qquad □ \;↔\;  \langle ϕ.. \rangle")
 
 CairoMakie.translate!(vlines!(top, [1.0/3, 0.7, 1], color = :gray, linewidth=0.2), 0, 0, -0.8)
-CairoMakie.translate!(hlines!(top, [0.02], color = :gray,linewidth=0.2), 0, 0, -0.8)
 
 for (idx, (Us, Ls)) in enumerate(zip(df_Binder_LU[:,:U],df_Binder_LU[:,:L]))
     if Us >0.9

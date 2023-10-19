@@ -2,36 +2,39 @@ function binder_fcn(S_i, S2_i)
     return  1 - S2_i / (3*S_i^2)
 end
 
+
 function calculate_Binder(S_s::Vector , S2_s::Vector , bin_length::Integer)
 
-    binned_S, binned_S2 = prebinning(S_s , S2_s , bin_length)
+    binned_S, binned_S2 = prebinning(bin_length, S_s , S2_s)
 
     #μ_g, σJackKnife_g = calc_mean_JackKnifeError(binder_fcn, binned_S, binned_S2)
     μ_g, σJackKnife_g = jackknife(binder_fcn, binned_S, binned_S2)
-
+    return μ_g, σJackKnife_g
 end
 
+
 """
-prebinning(x_vec::Vector , y_vec::Vector , bin_length::Integer)
-collapses the long vectors x,y into binned vectors 
+prebinning(bin_length::Integer, vecs::Vector{<:Number}...)
+collapses the long vectors in `vecs` into binned vectors 
 where each bin comprises `bin_length` number of former values.
 """
-function prebinning(x_vec::Vector , y_vec::Vector , bin_length::Integer)
-    if mod(length(x_vec), bin_length) != 0
-        println("Assumed binner length $(bin_length) is no integer multiple of data length $(length(x_vec)).
-                Left $(mod(length(x_vec), bin_length)) points unaccounted.")
+function prebinning(bin_length::Integer, vecs::Vector{<:Number}...)
+    if mod(length(vecs[1]), bin_length) != 0
+        println("Assumed binner length $(bin_length) is no integer multiple of data length $(length(vecs[1])).
+                Left $(mod(length(vecs[1]), bin_length)) points unaccounted.")
     end
-    N_bins=div(length(x_vec), bin_length)
+    N_bins=div(length(vecs[1]), bin_length)
 
-    binned_x=Vector{Float64}(undef, N_bins)
-    binned_y=Vector{Float64}(undef, N_bins)
-    for n in 1:N_bins
-        binned_x[n] = mean(x_vec[1 + (n-1)*bin_length : n*bin_length] )
-        binned_y[n] = mean(y_vec[1 + (n-1)*bin_length : n*bin_length] )
+    binned_vectors = map(vecs) do vec
+        [mean(vec[1 + (n-1)*bin_length : n*bin_length] ) for n in 1:N_bins]
     end
 
-    return binned_x, binned_y
+    return binned_vectors
 end
+
+
+
+
 """
     calc_mean_JackKnifeError(g::Function, x::Vector, y::Vector)
     computes the JackKnife estimate and the corresponding error.

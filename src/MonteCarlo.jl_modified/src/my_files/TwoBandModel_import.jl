@@ -1,4 +1,34 @@
 """
+Square lattice with next-to-nearest neighbor hopping couplings
+"""
+function SquareLattice_NNN(Lx, Ly = Lx)
+    uc = UnitCell(
+        "NNN - Square",
+        (Float64[1, 0], Float64[0, 1]),
+        [Float64[0, 0]],
+        [   
+            #on-site bond, due to chem. potential
+            Bond(1, 1, (0,  0), 0),
+
+            #NN bonds plus reversed
+            Bond(1, 1, ( 1,  0), 1),
+            Bond(1, 1, ( 0,  1), 1),
+            Bond(1, 1, (-1,  0), 2),
+            Bond(1, 1, ( 0, -1), 2),
+
+            #NNN bonds plus reversed
+            Bond(1, 1, ( 1,  1), 3),
+            Bond(1, 1, ( -1,  1), 3),
+            Bond(1, 1, ( -1,  -1), 4),
+            Bond(1, 1, ( 1,  -1), 4)
+        ]
+    )
+
+    Lattice(uc, (Lx, Ly))
+end
+
+
+"""
     HubbardModel(lattice; params...)
     HubbardModel(L, dims; params...)
     HubbardModel(params::Dict)
@@ -55,7 +85,7 @@ function choose_lattice(::Type{<: TwoBandModel}, dims, L)
     if dims == 1
         return Chain(L)
     elseif dims == 2
-        return SquareLattice(L)
+        return SquareLattice_NNN(L)
     else
         return CubicLattice(dims, L)
     end
