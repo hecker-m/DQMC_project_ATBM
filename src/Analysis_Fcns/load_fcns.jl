@@ -9,7 +9,7 @@ my_load(data, ::Val{:DQMC}; _recorder=true, _th_meas=true, _meas=true)
 saves time by optionally not loading e.g. thermalization measurements, 
 or the recorded configurations
 """
-function my_load(data, ::Val{:DQMC}; _recorder=true, _th_meas=true, _meas=true)
+function my_load(data, ::Val{:DQMC}; _recorder=true, _th_meas=true, _meas=true, _scheduler=false)
     if data["VERSION"] > 3
         throw(ErrorException("Failed to load DQMC version $(data["VERSION"])"))
     end
@@ -38,16 +38,20 @@ function my_load(data, ::Val{:DQMC}; _recorder=true, _th_meas=true, _meas=true)
         field = field_hint(model, to_tag(data["Model"]))(parameters, model)
         conf!(field, conf)
     end
-    scheduler = if haskey(data, "Scheduler")
-        MonteCarlo._load(data["Scheduler"])
-    else
-        if haskey(data["Parameters"], "global_moves") && Bool(data["Parameters"]["global_moves"])
-            rate = get(data["Parameters"], "global_rate", 10)
-            @warn "Replacing `global_moves = true` with GlobalFlip"
-            SimpleScheduler(LocalSweep(rate), GlobalFlip())
+    scheduler = if _scheduler
+                if haskey(data, "Scheduler")
+            MonteCarlo._load(data["Scheduler"])
         else
-            SimpleScheduler(LocalSweep())
+            if haskey(data["Parameters"], "global_moves") && Bool(data["Parameters"]["global_moves"])
+                rate = get(data["Parameters"], "global_rate", 10)
+                @warn "Replacing `global_moves = true` with GlobalFlip"
+                SimpleScheduler(LocalSweep(rate), GlobalFlip())
+            else
+                SimpleScheduler(LocalSweep())
+            end
         end
+    else
+        SimpleScheduler(LocalSweep())
     end
 
 
@@ -97,20 +101,20 @@ kwargs are _recorder=true, _th_meas=true, _meas=true from my_load(data["MC"], Va
 function _load(dqmcs::Array, L::Int, T::Real, beta::Real, U::Real, peierls::Bool, 
      therm::Int, sweeps::Int, N_worker::Int, beta_bool::Bool, jobid::Int=0; 
     path="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/Reprod_Fernandes_Paper/run_saves/", 
-    prefix_folder="", prefix_file="FP_", eps="", mu="", kwargs...)
+    prefix_folder="", prefix_file="FP_", eps="", mu="", δτ="" , kwargs...)
     
     beta_bool ? tempstring="b_" * to_string(beta) : tempstring="T_" * to_string(T)
 
     n_workers=0;
     for worker =1:N_worker
-        _path=path * prefix_folder * "L$(L)_" * tempstring * "_U_" * to_string(U) * eps * "_B_$(Int(peierls))";
+        _path=path * prefix_folder * "L$(L)_" * tempstring * "_U_" * to_string(U) * eps * "_B_$(Int(peierls))" *δτ;
 
         if jobid==0
             _filename=prefix_file * tempstring *"_U_"* to_string(U) * mu*
-            "_L$(L)" * eps * "_B_$(Int(peierls))_sw$(sweeps)_th$(therm)_worker_$(worker).jld2";
+            "_L$(L)" * eps * δτ * "_B_$(Int(peierls))_sw$(sweeps)_th$(therm)_worker_$(worker).jld2";
         else
             _filename=prefix_file * tempstring *"_U_"* to_string(U) * mu*
-            "_L$(L)" * eps * "_B_$(Int(peierls))_sw$(sweeps)_th$(therm)_worker_$(worker)_id$(jobid).jld2";
+            "_L$(L)" * eps * δτ * "_B_$(Int(peierls))_sw$(sweeps)_th$(therm)_worker_$(worker)_id$(jobid).jld2";
         end
 
         filename=_path * "/" * _filename;

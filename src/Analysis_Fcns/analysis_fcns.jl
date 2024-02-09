@@ -186,7 +186,8 @@ end
 function get_value_observable(binner::FullBinner,dqmcs, tuple::NamedTuple, my_lvl::Int ,
         binner_length::Int ;  kwargs...)
 
-    if isa(tuple.key, Symbol)
+    if isa(tuple.key, Symbol)   
+    #for multi-variate quantities (e.g. heat capacity), tuple.key is a tuple of Symbols
         get_value_observable_Scalar(binner ,dqmcs, tuple, my_lvl, binner_length;  kwargs...)
     else
         get_value_observable_JackKnife(binner ,dqmcs, tuple, my_lvl, binner_length;  kwargs...)

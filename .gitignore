@@ -40,6 +40,9 @@ projects/IsingX_Striped_d/materials/*
 
 projects/IsingX_Striped_c2d/*
 
+projects/IsingX_zero_hopping_limit/materials/*
+projects/IsingX_zero_hopping_limit/figures/dataframes/*
+
 projects/Heisenberg_Striped/figures/older_figures/*
 projects/Heisenberg_Striped/figures/dataframes/*
 

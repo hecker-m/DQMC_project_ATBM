@@ -1,4 +1,37 @@
 
+################################################################################
+### iterator for a time-averaged energy measurement --- higher accuracy 
+### necessary for heat capacity measurement
+################################################################################
+
+struct energy_iterator <: DirectLatticeIterator
+end
+
+function output_size(iter::energy_iterator, l::Lattice)
+    return (1,)
+end
+
+function apply!(
+        temp::Array, iter::energy_iterator, 
+        measurement, mc::DQMC, packed_greens, weight = 1.0 )
+    @timeit_debug "apply!(::energy_iterator, ::$(typeof(measurement.kernel)))" begin
+
+        temp[1] += weight * measurement.kernel(mc, mc.model, nothing, packed_greens, nothing)    
+    end
+    return 
+end
+
+@inline function finalize_temp!(::energy_iterator, m, mc)
+    β=mc.parameters.beta
+    m.temp .*= (1/(length(lattice(mc)) * β))  # * 1/N *1/β
+end
+@inline function commit!(::energy_iterator, m) 
+    push!(m.observable, m.temp[1])
+end
+
+
+
+
 ###########################
 ### lattice iterator for B1 charge density susceptibility
 ###########################
@@ -46,7 +79,7 @@ end
 
 
 @inline function finalize_temp!(::EachSitePair_B1, m, mc)
-    m.temp ./= (length(lattice(mc))^2)  # *1/N^4
+    m.temp ./= (length(lattice(mc))^2)  # *1/N^2
 end
 @inline function commit!(::EachSitePair_B1, m) 
     push!(m.observable, m.temp[1])
@@ -586,7 +619,8 @@ function apply!(
 end
 
 @inline function finalize_temp!(::EachDistancedBondPairSummed, m, mc)
-    m.temp ./= (length(lattice(mc))^2)  # *1/N^2
+    #since we assume that we mostly use the time-averaged measurement, we divide by β
+    m.temp ./= (mc.parameters.beta*length(lattice(mc))^2)  # *1/N^2 *1/β
 end
 @inline function commit!(::EachDistancedBondPairSummed, m) 
     push!(m.observable, m.temp[1])
@@ -643,8 +677,10 @@ function apply!(
 end
 
 @inline function finalize_temp!(::EachBondEachSiteSummed, m, mc)
+    #since we assume that we mostly use the time-averaged measurement, we divide by β
     U=mc.model.U
-    m.temp .*= (-U/length(lattice(mc))^2)  # * (-U/N^2)
+    β=mc.parameters.beta
+    m.temp .*= (-U/(length(lattice(mc))^2 * β))  # * (-U/N^2) *1/β
 end
 @inline function commit!(::EachBondEachSiteSummed, m) 
     push!(m.observable, m.temp[1])
@@ -681,13 +717,50 @@ end
 
 @inline function finalize_temp!(::EachSiteTwiceSummed, m, mc)
     U=mc.model.U
-    m.temp .*= (U^2/length(lattice(mc))^2)  # * U^2/N^2
+    if typeof(m.greens_iterator) <: AbstractUnequalTimeGreensIterator
+        β=mc.parameters.beta
+    else
+        β=1
+    end    
+    m.temp .*= (U^2/(length(lattice(mc))^2 * β))  # * U^2/N^2 *1/β
 end
 @inline function commit!(::EachSiteTwiceSummed, m) 
     push!(m.observable, m.temp[1])
 end
 
 
+struct EachSiteSummed <: DirectLatticeIterator
+end
+function output_size(iter::EachSiteSummed, l::Lattice)
+    return (1,)
+end
+
+function apply!(
+        temp::Array, iter::EachSiteSummed, 
+        measurement, mc::DQMC, packed_greens, weight = 1.0 )
+    @timeit_debug "apply!(::EachSiteSummed, ::$(typeof(measurement.kernel)))" begin
+        l = lattice(mc)
+        @inbounds @fastmath for σ in measurement.flavor_iterator    
+            @simd for i in eachindex(l)
+                temp[1] += weight * measurement.kernel(mc, mc.model, (i, i), packed_greens, σ)    
+            end
+        end
+    end
+    return 
+end
+
+@inline function finalize_temp!(::EachSiteSummed, m, mc)
+    U=mc.model.U
+    if typeof(m.greens_iterator) <: AbstractUnequalTimeGreensIterator
+        β=mc.parameters.beta
+    else
+        β=1
+    end
+    m.temp .*= (U^2/(length(lattice(mc))^2 * β))  # * U^2/N^2 *1/β
+end
+@inline function commit!(::EachSiteSummed, m) 
+    push!(m.observable, m.temp[1])
+end
 
 #############################
 ### order parameter Iterators

@@ -9,6 +9,8 @@ using Parameters, Requires
 using TimerOutputs, StructArrays
 using Printf, SparseArrays, LinearAlgebra, Dates, Statistics, Random, Distributed
 using FFTW
+using Polynomials, SpecialPolynomials
+
 # unoptized version, mainly for tests
 # this still uses custom linear algebra methods, just without loopvectorization
 if get(ENV, "MONTECARLO_USE_LOOPVECTORIZATION", "true") == "true"
@@ -168,6 +170,7 @@ include("my_files/measurements/order_parameters.jl")
 include("my_files/measurements/diamagnetic_Kx.jl")
 include("my_files/measurements/PhaseStiffness_measurement.jl")
 include("my_files/measurements/heat_capacity.jl")
+include("my_files/measurements/total_greens_fcn.jl")
 include("my_files/q_discretization.jl")
 include("my_files/my_updates.jl")
 
@@ -177,11 +180,11 @@ export _zero!, to_string
 #updates that I defined
 export GlobalConstMove, SpatialStaggeredFlip, SpatialStripedXorYFlip, PartialGlobalFlip, pGlobalXorYshift, AddShiftedConfiguration, AddStaggeredConfiguration, LinWeightedStaggFlip, LinWeightedFlip
 # Fields and model that I defined
-export TwoBandModel, hopping_matrix, AbstractMagnBosonField, AbstractContMBF, Cont_MBF1, Cont_MBF2, Cont_MBF3, AbstractDiscreteMBF, Discrete_MBF1, Discrete_MBF1_symm, Discrete_MBF1_X, Discrete_MBF1_X_symm,  Discrete_MBF2, Discrete_MBF2_symm, Discrete_MBF3
+export TwoBandModel, hopping_matrix, AbstractMagnBosonField, AbstractContMBF, Cont_MBF1, Cont_MBF1_X_symm, Cont_MBF2, Cont_MBF3, AbstractDiscreteMBF, Discrete_MBF1, Discrete_MBF1_symm, Discrete_MBF1_X, Discrete_MBF1_X_symm, Discrete_8_MBF1_X_symm, Discrete_12_MBF1_X_symm, Discrete_16_MBF1_X_symm, Discrete_MBF2, Discrete_MBF2_symm, Discrete_MBF3
 
 #measurements that I defined
-export nematic_measurement, nematic_correlation, nematic_susceptibility, full_nem_kernel
-export A1_Q1Q2_measurement, A1_Q1Q2_correlation, A1_Q1Q2_susceptibility, full_A1_Q1Q2_kernel
+export nematic_measurement, nematic_correlation, nematic_susceptibility, full_nem_kernel, nem_X_kernel
+export A1_Q1Q2_measurement, A1_Q1Q2_correlation, A1_Q1Q2_susceptibility, full_A1_Q1Q2_kernel, A1_Q1Q2_X_kernel
 export B1_charge_density_measurement, B1_charge_density_correlation, B1_charge_density_susceptibility, full_B1_charge_density_kernel
 export nematic_OP_measurement, nematic_OP, full_nematic_OP_kernel, A1p_OP_measurement, A1p_OP, full_B1p_OP_kernel, B1p_OP, B1p_OP_measurement
 export Δ_Zy_bil_OP, Δ_0y_bil_OP, Δ_Ysum_bil_OP, Δ_Xy_bil_OP
@@ -190,10 +193,10 @@ export B1p_Q1Q2_measurement, full_B1p_Q1Q2_kernel, B1p_Q1Q2_correlation, B1p_Q1Q
 
 export kinetic_energy_kernel, interaction_energy_kernel, total_energy_kernel, Mx_z_kernel, Mx_x_kernel, Mx_X_OP, full_sdc_Mx_z_kernel, full_sdc_Mx_x_kernel, full_sdc_Mx_y_kernel, full_cdc_kernel, reduced_cdc_kernel, reduced_cdc_kernel_old, pc_combined_kernel, nearest_neighbor_count, pc_swave_kernel, pc_swave_kernel_conj, pc_swave_kernel_symm, pc_spm_wave_kernel, pc_spm_wave_kernel_conj, pc_spm_wave_kernel_symm, pc_XX_wave_kernel, pc_YYzz_wave_kernel, my_cc_kernel, _reliable_level, spectral_weight_proxy, full_sdc_Mx_z_kernel2, full_cdc_XX_kernel
 export kx_dia_measurement, phase_stiffness
-export heat_cap_h2, heat_cap_h3, heat_cap_h4, heat_cap_h2_kernel, heat_cap_h3_kernel, heat_cap_h4_kernel
+export heat_cap_h2, heat_cap_h3, heat_cap_h4, heat_cap_h2_TI, heat_cap_h3_TI, heat_cap_h4_TI, heat_cap_h2_measurement, heat_cap_h3_measurement, heat_cap_h4_measurement, heat_cap_h2_kernel, heat_cap_h3_kernel, heat_cap_h4_kernel, total_greens_measurement, t0_B1_charge_density_kernel, t0_diag_B1_charge_density_kernel, t0_diag_test1_B1_charge_density_kernel
 
 
-
+export local_displaced_charge_density_susceptibility, local_displaced_charge_density_correlation, OneSite_Displaced
 export kinetic_energy_kernel_bonds
 export FieldCache, unique_flavors, DQMCStack, init!, conf, nslices, interaction_matrix_exp!, interaction_matrix_exp_op!, calculate_detratio!, update_greens!, propose_local, randuniform, initialize_run
 
@@ -202,7 +205,7 @@ export interaction_matrix_type, hopping_matrix_type, greens_matrix_type, greens_
 
 
 #Iterators which I defined
-export EachSitePair_summed, EachDoubleSitePairByDistance, EachDoubleSitePairByDistance_Q1Q2, EachSitePair_B1, EachSitePair_B1_OP, EachSitePair_A1p_OP, EachSitePair_B1p_OP, EachDoubleSitePairByDistance_B1p_Q1Q2, EachWeightedBond, PS_EachBondPairByBravaisDistance, EachDistancedBondPairSummed, EachBondEachSiteSummed, EachSiteTwiceSummed
+export EachSitePair_summed, EachDoubleSitePairByDistance, EachDoubleSitePairByDistance_Q1Q2, EachSitePair_B1, EachSitePair_B1_OP, EachSitePair_A1p_OP, EachSitePair_B1p_OP, EachDoubleSitePairByDistance_B1p_Q1Q2, EachWeightedBond, PS_EachBondPairByBravaisDistance, EachDistancedBondPairSummed, EachBondEachSiteSummed, EachSiteTwiceSummed, EachSiteSummed, energy_iterator, total_greens_li
 
 #include("precompile.jl")
 #include("Google Drive/DQMC/AFM_2_band_model/2BM_DQMC_code/TBM_field.jl")

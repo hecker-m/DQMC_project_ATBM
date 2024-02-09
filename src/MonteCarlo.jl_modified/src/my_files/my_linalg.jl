@@ -1,5 +1,14 @@
 
-
+vmul!(C::Matrix, A::Hermitian, B::SparseMatrixCSC) = vmul!(C, A.data, B) 
+vmul!(C::Matrix, A::SparseMatrixCSC, B::Hermitian) = vmul!(C, A, B.data) 
+function vmul!(C::Matrix, A::SparseMatrixCSC, B::Matrix)
+    @debug "vmul!($(typeof(C)), $(typeof(A)), $(typeof(B)))"
+    mul!(C, A, B)        
+end
+function vmul!(C::Matrix, A::Matrix, B::SparseMatrixCSC)
+    @debug "vmul!($(typeof(C)), $(typeof(A)), $(typeof(B)))"
+    mul!(C, A, B)        
+end
 
 
 @inline function vldiv22!(cache::StandardFieldCache, R::Matrix{G}, Δ::Matrix{G}) where G <:Number

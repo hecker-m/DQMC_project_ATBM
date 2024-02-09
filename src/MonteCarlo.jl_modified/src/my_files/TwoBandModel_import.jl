@@ -63,9 +63,9 @@ mutable struct TwoBandModel{LT <: AbstractLattice} <: Model
 end
 
 @inline function TwoBandModel(tx::Vector{<:Real},ty::Vector{<:Real},tp::Vector{<:Real},
-    μs::Vector{<:Real}, U::Real, l::AbstractLattice, peierls::Bool,Bfield::Float64,nflav::Int64)
+        μs::Vector{<:Real}, U::Real, l::AbstractLattice, peierls::Bool,Bfield::Float64,nflav::Int64)
     TwoBandModel(Vector{Float64}(tx),Vector{Float64}(ty), Vector{Float64}(tp),Vector{Float64}(μs),
-     Float64(U), l, peierls, Bfield::Float64,nflav::Int64)
+        Float64(U), l, peierls, Bfield::Float64,nflav::Int64)
 end
 # Bfield = n0/L^2 has per default n0=1 flux quanta
 function TwoBandModel(; 
@@ -127,27 +127,27 @@ pbcM(i,L)=pbc && i==0 ? L : i;
 
 # hopping kernel without Peierls phases
 MhopWO(m::TwoBandModel,ix,iy,jx,jy,γ,ν,γp,νp,L)=m.tx[γ]*δ(γ,γp)*δ(ν,νp)*δ(iy,jy)*
-(δ(ix,pbcP(jx+1,L))+δ(ix,pbcM(jx-1,L)))+
-m.ty[γ]*δ(γ,γp)*δ(ν,νp)*δ(ix,jx)*(δ(iy,pbcP(jy+1,L))+δ(iy,pbcM(jy-1,L)))+ 
-m.tp[γ]*δ(γ,γp)*δ(ν,νp)*
-(δ(ix,pbcP(jx+1,L))*δ(iy,pbcP(jy+1,L))+
-δ(ix,pbcM(jx-1,L))*δ(iy,pbcM(jy-1,L))+
-δ(ix,pbcP(jx+1,L))*δ(iy,pbcM(jy-1,L))+
-δ(ix,pbcM(jx-1,L))*δ(iy,pbcP(jy+1,L)));
+    (δ(ix,pbcP(jx+1,L))+δ(ix,pbcM(jx-1,L)))+
+    m.ty[γ]*δ(γ,γp)*δ(ν,νp)*δ(ix,jx)*(δ(iy,pbcP(jy+1,L))+δ(iy,pbcM(jy-1,L)))+ 
+    m.tp[γ]*δ(γ,γp)*δ(ν,νp)*
+    (δ(ix,pbcP(jx+1,L))*δ(iy,pbcP(jy+1,L))+
+    δ(ix,pbcM(jx-1,L))*δ(iy,pbcM(jy-1,L))+
+    δ(ix,pbcP(jx+1,L))*δ(iy,pbcM(jy-1,L))+
+    δ(ix,pbcM(jx-1,L))*δ(iy,pbcP(jy+1,L)));
 
 # hopping kernel with Peierls phases
 MhopPeierls(m::TwoBandModel,ix,iy,jx,jy,γ,ν,γp,νp,L,B)=m.tx[γ]*δ(γ,γp)*δ(ν,νp)*δ(iy,jy)*(δ(ix,pbcP(jx+1,L))*exp(im*B*2*pi*jy)+
-                            δ(ix,pbcM(jx-1,L))*exp(-im*B*2*pi*jy))+
-                            m.ty[γ]*δ(γ,γp)*δ(ν,νp)*δ(ix,jx)*(δ(iy,pbcP(jy+1,L))*((1-δ(jy,L))+δ(jy,L)*exp(-im*B*2*pi*L*ix))+
-                            δ(iy,pbcM(jy-1,L))*((1-δ(jy,1))+δ(jy,1)*exp(im*B*2*pi*L*ix)))+
-                            m.tp[γ]*δ(γ,γp)*δ(ν,νp)*
-(δ(ix,pbcP(jx+1,L))*δ(iy,pbcP(jy+1,L))*((1-δ(jy,L))*exp(im*B*2*pi*(jy+0.5))+
+            δ(ix,pbcM(jx-1,L))*exp(-im*B*2*pi*jy))+
+            m.ty[γ]*δ(γ,γp)*δ(ν,νp)*δ(ix,jx)*(δ(iy,pbcP(jy+1,L))*((1-δ(jy,L))+δ(jy,L)*exp(-im*B*2*pi*L*ix))+
+            δ(iy,pbcM(jy-1,L))*((1-δ(jy,1))+δ(jy,1)*exp(im*B*2*pi*L*ix)))+
+            m.tp[γ]*δ(γ,γp)*δ(ν,νp)*
+            (δ(ix,pbcP(jx+1,L))*δ(iy,pbcP(jy+1,L))*((1-δ(jy,L))*exp(im*B*2*pi*(jy+0.5))+
             δ(jy,L)*exp(-im*B*2*pi*(L*jx-0.5)))+
-δ(ix,pbcM(jx-1,L))*δ(iy,pbcM(jy-1,L))*((1-δ(jy,1))*exp(-im*B*2*pi*(jy-0.5))+
+            δ(ix,pbcM(jx-1,L))*δ(iy,pbcM(jy-1,L))*((1-δ(jy,1))*exp(-im*B*2*pi*(jy-0.5))+
             δ(jy,1)*exp(im*B*2*pi*(L*jx-L-0.5)))+
-δ(ix,pbcP(jx+1,L))*δ(iy,pbcM(jy-1,L))*((1-δ(jy,1))*exp(im*B*2*pi*(jy-0.5))+
+            δ(ix,pbcP(jx+1,L))*δ(iy,pbcM(jy-1,L))*((1-δ(jy,1))*exp(im*B*2*pi*(jy-0.5))+
             δ(jy,1)*exp(im*B*2*pi*(L*jx+L+0.5)))+
-δ(ix,pbcM(jx-1,L))*δ(iy,pbcP(jy+1,L))*((1-δ(jy,L))*exp(-im*B*2*pi*(jy+0.5))+
+            δ(ix,pbcM(jx-1,L))*δ(iy,pbcP(jy+1,L))*((1-δ(jy,L))*exp(-im*B*2*pi*(jy+0.5))+
             δ(jy,L)*exp(-im*B*2*pi*(L*jx+0.5))));
 # basis used cᵣ₁↑, cᵣ₁↓, cᵣ₂↑, cᵣ₂↓, with ν denoting spin and γ denoting band
 idxM(ix,iy,γ,ν,L)=ix+(iy-1)*L+(ν-1)*(L^2)+(γ-1)*(2*L^2);

@@ -76,7 +76,7 @@ dia_K(mc, key::Symbol, dir::Vector)
 dia_K(mc, m::DQMCMeasurement, dir::Vector)
 dia_K(mc, G::Matrix, dir::Vector)
 
-Computes the diamangetic contribution of electromagnetic response of the system
+Computes the diamagnetic contribution of electromagnetic response of the system
 along a given direction `dir`. 
 """
 dia_K(mc::DQMC, key::Symbol, shift_dir) = dia_K(mc, mean(mc[key]), shift_dir)
@@ -125,7 +125,7 @@ function kx_kernel_post(mc, G, T, st::NTuple{2}, ::AbstractMagnBosonField)
         G[r, rPb]*T[rPb, r] + G[N + r, N + rPb]*T[N + rPb, N + r] + 
         G[2N + r, 2N + rPb]*T[2N + rPb, 2N + r] + G[3N + r, 3N + rPb]*T[3N + rPb, 3N + r]
 end
-function kx_kernel_post(mc, G, T, st::NTuple{2}, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+function kx_kernel_post(mc, G, T, st::NTuple{2}, ::Union{Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
     N = length(lattice(mc))
     r, rPb =st
     return 2*real(G[rPb, r]*T[r, rPb] + G[N + rPb, N + r]*T[N + r, N + rPb] + 

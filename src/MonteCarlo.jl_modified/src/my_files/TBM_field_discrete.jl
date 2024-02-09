@@ -1,5 +1,45 @@
+##############
+### useful  functions for zeros and weights of discrete fields
+##############
+"""
+calc_xs(k::Int)
+
+Calculates the zeros of the Hermite polynomial Hₖ(x).
+Returns twice the zeros, as per defined in the code.
+"""
+function calc_xs(k::Int, _symmetrize::Bool=false)
+    x = variable(Polynomial{Rational{Int}})
+    poly=basis(Hermite, k)(x)
+    _zeros=sort(roots(poly))
+    if !(typeof(_zeros[1]) <: Real)
+        error("The polynomial zeros are not real!")
+    end
+    if length(_zeros)!= k
+        error("Not all polynomial zeros have been computed!")
+    end
+    if _symmetrize
+        for i in 1:div(k, 2)
+            _zeros[i]= (_zeros[i]-_zeros[k+1-i])/2
+            _zeros[k+1-i]= -_zeros[i]
+        end
+    end
+    return 2 * _zeros 
+end
+"""
+calc_weights(k::Int, xs::Vector{T})
+
+Calculates the weights corresponding to the zeros derived in `calc_xs(k)`
+"""
+function calc_weights(k::Int, xs::Vector{T}) where T<:Real
+    x = variable(Polynomial{Rational{Int}})
+    poly=basis(Hermite, k-1)(x)
+    return [4/sqrt(π)*2^(k-1) *factorial(k) *sqrt(π) /
+        (k^2 * poly(xs[i]/2)^2)  for i in eachindex(xs)]
+end
+
 
 abstract type AbstractDiscreteMBF <: AbstractMagnBosonField end
+abstract type Abstract_DiscreteMBF1_X_symm <: AbstractDiscreteMBF end
 
 
 """
@@ -9,7 +49,7 @@ Discrete_MBF1
 
     Note that this is the full version, i.e. it is not symmetry-optimized.
 """
-struct Discrete_MBF1 <: AbstractDiscreteMBF #Continuous magnetic boson field with Nϕ=1
+struct Discrete_MBF1 <: AbstractDiscreteMBF 
     α::Float64          # α=sqrt(δτ*U)
     w::Vector{Float64}  #holds the four bosonic weights
     x::Vector{Float64}  #holds the four exponential weights
@@ -59,7 +99,7 @@ end
 """
 Discrete_MBF1_X
 
-    Ising>X-magnetic boson field with Nϕ=1
+    Ising-X magnetic boson field with `Nϕ`=1 
 
     Note that this is the full version, i.e. it is not symmetry-optimized.
 """
@@ -89,7 +129,7 @@ Discrete_MBF1_X_symm
 
     Symmetry-optimized IsingX-magnetic boson field with Nϕ=1
 """
-struct Discrete_MBF1_X_symm <: AbstractDiscreteMBF #Continuous magnetic boson field with Nϕ=1
+struct Discrete_MBF1_X_symm <: Abstract_DiscreteMBF1_X_symm #Continuous magnetic boson field with Nϕ=1
     α::Float64          # α=sqrt(δτ*U)
     w::Vector{Float64}  #holds the four bosonic weights
     x::Vector{Float64}  #holds the four exponential weights
@@ -105,6 +145,114 @@ function Discrete_MBF1_X_symm(param::DQMCParameters, model::Model)
     xs = Float64[-sqrt(6 + 2s6), -sqrt(6 - 2s6), sqrt(6 - 2s6), sqrt(6 + 2s6)]
     choices = Int8[2 3 4; 1 3 4; 1 2 4; 1 2 3]
     Discrete_MBF1_X_symm( α, ws, xs, choices,
+        Array{Int8}(undef, 1, length(lattice(model)), param.slices),
+        Array{Int8}(undef, 1, length(lattice(model)), param.slices), 
+        Vector{Int8}(undef,1))
+end
+
+"""
+Discrete_8_MBF1_X_symm
+
+    Symmetry-optimized IsingX-magnetic boson field with `Nϕ`=1.
+    It is discretized into k=8 supporting points (vs. the more standard k=4). 
+"""
+struct Discrete_8_MBF1_X_symm <: Abstract_DiscreteMBF1_X_symm #Continuous magnetic boson field with Nϕ=1
+    α::Float64          # α=sqrt(δτ*U)
+    w::Vector{Float64}  #holds the eight bosonic weights
+    x::Vector{Float64}  #holds the eight exponential weights
+    choices::Matrix{Int8}
+    temp_conf::Array{Int8, 3} #stores numbers η ∈ {1,...,8}
+    conf::Array{Int8, 3}
+    temp_vec::Vector{Int8}
+end
+
+function Discrete_8_MBF1_X_symm(param::DQMCParameters, model::Model)
+    α = sqrt(param.delta_tau *model.U)
+    xs = calc_xs(8, true)
+    ws = calc_weights(8, xs)
+
+    choices = Int8[2 3 4 5 6 7 8; 1 3 4 5 6 7 8; 
+        1 2 4 5 6 7 8; 1 2 3 5 6 7 8;
+        1 2 3 4 6 7 8; 1 2 3 4 5 7 8;
+        1 2 3 4 5 6 8; 1 2 3 4 5 6 7]
+
+    #I promoted the four x-values with the largest weight (3-6),
+    #in order to increase accepntance rate.
+    #TODO: This needs to be implemented together with the acceptance ratio
+    #T₀(C → C`)/T₀(C` → C)   
+    # choices = Int8[2 3 4 5 6 7 8 3 4 5 6; 1 3 4 5 6 7 8 3 4 5 6; 
+    #     1 2 4 5 6 7 8 2 4 5 6; 1 2 3 5 6 7 8 3 2 5 6;
+    #     1 2 3 4 6 7 8 3 4 7 6; 1 2 3 4 5 7 8 3 4 5 7;
+    #     1 2 3 4 5 6 8 3 4 5 6; 1 2 3 4 5 6 7 3 4 5 6]
+    Discrete_8_MBF1_X_symm( α, ws, xs, choices,
+        Array{Int8}(undef, 1, length(lattice(model)), param.slices),
+        Array{Int8}(undef, 1, length(lattice(model)), param.slices), 
+        Vector{Int8}(undef,1))
+end
+
+"""
+Discrete_12_MBF1_X_symm
+
+    Symmetry-optimized IsingX-magnetic boson field with Nϕ=1.
+    It is discretized into k=12 supporting points (vs. the more standard k=4). 
+"""
+struct Discrete_12_MBF1_X_symm <: Abstract_DiscreteMBF1_X_symm #Continuous magnetic boson field with Nϕ=1
+    α::Float64          # α=sqrt(δτ*U)
+    w::Vector{Float64}  #holds the eight bosonic weights
+    x::Vector{Float64}  #holds the eight exponential weights
+    choices::Matrix{Int8}
+    temp_conf::Array{Int8, 3} #stores numbers η ∈ {1,...,12}
+    conf::Array{Int8, 3}
+    temp_vec::Vector{Int8}
+end
+
+function Discrete_12_MBF1_X_symm(param::DQMCParameters, model::Model)
+    α = sqrt(param.delta_tau *model.U)
+    xs = calc_xs(12, true)
+    ws = calc_weights(12, xs)
+
+    choices = Int8[2 3 4 5 6 7 8 9 10 11 12; 1 3 4 5 6 7 8 9 10 11 12; 
+        1 2 4 5 6 7 8 9 10 11 12; 1 2 3 5 6 7 8 9 10 11 12; 
+        1 2 3 4 6 7 8 9 10 11 12; 1 2 3 4 5 7 8 9 10 11 12; 
+        1 2 3 4 5 6 8 9 10 11 12; 1 2 3 4 5 6 7 9 10 11 12; 
+        1 2 3 4 5 6 7 8 10 11 12; 1 2 3 4 5 6 7 8 9 11 12; 
+        1 2 3 4 5 6 7 8 9 10 12; 1 2 3 4 5 6 7 8 9 10 11;  ]
+        Discrete_12_MBF1_X_symm( α, ws, xs, choices,
+        Array{Int8}(undef, 1, length(lattice(model)), param.slices),
+        Array{Int8}(undef, 1, length(lattice(model)), param.slices), 
+        Vector{Int8}(undef,1))
+end
+
+"""
+Discrete_16_MBF1_X_symm
+
+    Symmetry-optimized IsingX-magnetic boson field with Nϕ=1.
+    It is discretized into k=16 supporting points (vs. the more standard k=4). 
+"""
+struct Discrete_16_MBF1_X_symm <: Abstract_DiscreteMBF1_X_symm #Continuous magnetic boson field with Nϕ=1
+    α::Float64          # α=sqrt(δτ*U)
+    w::Vector{Float64}  #holds the eight bosonic weights
+    x::Vector{Float64}  #holds the eight exponential weights
+    choices::Matrix{Int8}
+    temp_conf::Array{Int8, 3} #stores numbers η ∈ {1,...,12}
+    conf::Array{Int8, 3}
+    temp_vec::Vector{Int8}
+end
+
+function Discrete_16_MBF1_X_symm(param::DQMCParameters, model::Model)
+    α = sqrt(param.delta_tau *model.U)
+    xs = calc_xs(16, true)
+    ws = calc_weights(16, xs)
+
+    choices = Int8[2 3 4 5 6 7 8 9 10 11 12 13 14 15 16; 1 3 4 5 6 7 8 9 10 11 12 13 14 15 16; 
+        1 2 4 5 6 7 8 9 10 11 12 13 14 15 16; 1 2 3 5 6 7 8 9 10 11 12 13 14 15 16; 
+        1 2 3 4 6 7 8 9 10 11 12 13 14 15 16; 1 2 3 4 5 7 8 9 10 11 12 13 14 15 16; 
+        1 2 3 4 5 6 8 9 10 11 12 13 14 15 16; 1 2 3 4 5 6 7 9 10 11 12 13 14 15 16; 
+        1 2 3 4 5 6 7 8 10 11 12 13 14 15 16; 1 2 3 4 5 6 7 8 9 11 12 13 14 15 16; 
+        1 2 3 4 5 6 7 8 9 10 12 13 14 15 16; 1 2 3 4 5 6 7 8 9 10 11 13 14 15 16;  
+        1 2 3 4 5 6 7 8 9 10 11 12 14 15 16; 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16;
+        1 2 3 4 5 6 7 8 9 10 11 12 13 14 16; 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15;]
+        Discrete_16_MBF1_X_symm( α, ws, xs, choices,
         Array{Int8}(undef, 1, length(lattice(model)), param.slices),
         Array{Int8}(undef, 1, length(lattice(model)), param.slices), 
         Vector{Int8}(undef,1))
@@ -227,6 +375,21 @@ interaction_eltype(f::Discrete_MBF3) =ComplexF64
 const _DMBF_VALS = (Int8(1), Int8(2), Int8(3), Int8(4))
 Base.rand(f::AbstractDiscreteMBF) = rand(_DMBF_VALS, size(f.conf))
 Random.rand!(f::AbstractDiscreteMBF) = rand!(f.conf, _DMBF_VALS)
+
+const _DMBF_8_VALS = (Int8(1), Int8(2), Int8(3), Int8(4), Int8(5), Int8(6), Int8(7), Int8(8))
+Base.rand(f::Discrete_8_MBF1_X_symm) = rand(_DMBF_8_VALS, size(f.conf))
+Random.rand!(f::Discrete_8_MBF1_X_symm) = rand!(f.conf, _DMBF_8_VALS)
+
+const _DMBF_12_VALS = (Int8(1), Int8(2), Int8(3), Int8(4), Int8(5), Int8(6), Int8(7), Int8(8), 
+    Int8(9), Int8(10), Int8(11), Int8(12))
+Base.rand(f::Discrete_12_MBF1_X_symm) = rand(_DMBF_12_VALS, size(f.conf))
+Random.rand!(f::Discrete_12_MBF1_X_symm) = rand!(f.conf, _DMBF_12_VALS)
+
+const _DMBF_16_VALS = (Int8(1), Int8(2), Int8(3), Int8(4), Int8(5), Int8(6), Int8(7), Int8(8), 
+    Int8(9), Int8(10), Int8(11), Int8(12), Int8(13), Int8(14), Int8(15), Int8(16))
+Base.rand(f::Discrete_16_MBF1_X_symm) = rand(_DMBF_16_VALS, size(f.conf))
+Random.rand!(f::Discrete_16_MBF1_X_symm) = rand!(f.conf, _DMBF_16_VALS)
+
 Random.rand!(f::AbstractMagnBosonField; kwargs...)=rand!(f)
 
 
@@ -234,7 +397,7 @@ Random.rand!(f::AbstractMagnBosonField; kwargs...)=rand!(f)
 ### Utility
 ################################################################################
 
-compressed_conf_type(::AbstractDiscreteMBF) = BitArray
+compressed_conf_type(::Type{<: AbstractDiscreteMBF}) = BitArray
 function compress(f::AbstractDiscreteMBF)
     # converts (1, 2, 3, 4) -> (00, 01, 10, 11)
     BitArray((div(v-1, 2), (v-1) % 2)[step] for v in f.conf for step in (1, 2))
@@ -244,38 +407,63 @@ function decompress(f::AbstractDiscreteMBF, c)
     conf = similar(f.conf)
     for i in eachindex(conf)
         #  1    +    2 * bit1    +    bit2
-        conf[i] = Int8(1) + Int8(2) * c[2i-1] + Int8(c[2i])
+        conf[i] = Int8(1) + Int8(2) * Int8(c[2i-1]) + Int8(c[2i])
     end
     conf
 end
 function decompress!(f::AbstractDiscreteMBF, c)
     for i in eachindex(f.conf)
         #  1    +    2 * bit1    +    bit2
-        f.conf[i]=Int8(1) + Int8(2) * c[i] + Int8(c[i+1]) 
+        f.conf[i]=Int8(1) + Int8(2) * Int8(c[i]) + Int8(c[i+1]) 
         #I added f.conf[i]=
         #Not sure if it worked before
     end
     #f.conf
 end
 
-function ConfigRecorder(::Type{<: AbstractDiscreteMBF}, rate::Int = 10)
-    ConfigRecorder{BitArray}(rate)
+function compress(f::Discrete_8_MBF1_X_symm)
+    # converts (1, 2, 3, 4, 5, 6, 7, 8) -> (000, 001, 010, 011, 100, 101, 110, 111)
+    BitArray((div(v-1, 4), div(mod(v-1,4), 2), mod(mod(v-1,4), 2))[step] for v in f.conf for step in (1, 2, 3))
+end
+function decompress(f::Discrete_8_MBF1_X_symm, c)
+    # converts (000, 001, 010, 011, 100, 101, 110, 111) -> (1, 2, 3, 4, 5, 6, 7, 8)
+    conf = similar(f.conf)
+    for i in eachindex(conf)
+        #bit1 = c[3i-2],  #bit2 = c[3i-1],   #bit3 = c[3i]
+        #  1    +    4 * bit1    +   2 * bit2 + bit3
+        conf[i] = Int8(1) + Int8(4) * Int8(c[3i-2]) + Int8(2) * Int8(c[3i-1]) + Int8(c[3i])
+    end
+    conf
+end
+function decompress!(f::Discrete_8_MBF1_X_symm, c)
+    # converts (000, 001, 010, 011, 100, 101, 110, 111) -> (1, 2, 3, 4, 5, 6, 7, 8)
+    for i in eachindex(f.conf)
+        #bit1 = c[3i-2],  #bit2 = c[3i-1],  #bit3 = c[3i]
+        #  1    +    4 * bit1    +   2 * bit2 + bit3
+        f.conf[i] = Int8(1) + Int8(4) * Int8(c[3i-2]) + Int8(2) * Int8(c[3i-1]) + Int8(c[3i])
+    end
 end
 
-function Base.push!(c::ConfigRecorder, field::AbstractDiscreteMBF, sweep)
-    (sweep % c.rate == 0) && push!(c.configs, compress(field))
-    nothing
+function compress(f::Union{Discrete_12_MBF1_X_symm, Discrete_16_MBF1_X_symm})
+    # converts (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12) -> 
+    #(0000, 0001, 0010, 0011, 0100, 0101, 0110, 0111, 1000, 1001, 1010, 1011)
+    BitArray((div(v-1, 8), div(mod(v-1,8), 4), div(mod(mod(v-1,8), 4),2), mod(mod(mod(v-1,8), 4),2))[step] for v in f.conf for step in (1, 2, 3, 4))
+end
+function decompress(f::Union{Discrete_12_MBF1_X_symm, Discrete_16_MBF1_X_symm}, c)
+    conf = similar(f.conf)
+    for i in eachindex(conf)
+        #bit1 = c[4i-1],  #bit2 = c[4i-2],   #bit3 = c[4i-1] #bit4 = c[4i]
+        #  1    +    8 * bit1    +   4 * bit2 + 2 * bit3 +bit4
+        conf[i] = Int8(1) + Int8(8) * Int8(c[4i-3]) + Int8(4) * Int8(c[4i-2])+ Int8(2) * Int8(c[4i-1]) + Int8(c[4i])
+    end
+    conf
+end
+function decompress!(f::Union{Discrete_12_MBF1_X_symm, Discrete_16_MBF1_X_symm}, c)
+    for i in eachindex(f.conf)
+        f.conf[i] = Int8(1) + Int8(8) * Int8(c[4i-3]) + Int8(4) * Int8(c[4i-2])+ Int8(2) * Int8(c[4i-1]) + Int8(c[4i])
+    end
 end
 
-function BufferedConfigRecorder(::Type{<: AbstractDiscreteMBF}, 
-        filename; rate = 10, chunk_size = 1000)
-    BufferedConfigRecorder{BitArray}(filename, rate, chunk_size)
-end
-
-function Base.push!(cr::BufferedConfigRecorder, field::AbstractDiscreteMBF, sweep)
-    (sweep % cr.rate == 0) && _push!(cr, compress(field))
-    nothing
-end
 
 
 # cosmetics
@@ -286,7 +474,7 @@ function Base.summary(field::AbstractDiscreteMBF)
 end
 function Base.show(io::IO, field::AbstractDiscreteMBF)
     println(io, " Discrete magnetic bosonic field")
-    println(io, "\tNumber of components Nϕ= $(size(field.conf)[1])")
+    println(io, "\tNumber of components Nϕ= $(size(field.conf)[1]), and number of supp. points k=$(length(field.x))")
 end
 
 
@@ -295,8 +483,8 @@ end
 @inline function propose_local(mc::DQMC, model::Model, 
     f::Union{Discrete_MBF1, Discrete_MBF1_X}, i::Int, slice::Int)
     η_old = f.conf[1,i, slice]
-
-    f.temp_vec[:]=@inbounds [f.choices[η_old, rand(1:3)]]
+    k=size(f.choices)[2]
+    f.temp_vec[:]=@inbounds [f.choices[η_old, rand(1:k)]]
 
     detratio = calculate_detratio!(mc, model , i, f.temp_vec)
     return detratio * f.w[f.temp_vec[1]]/f.w[η_old], 0.0, f.temp_vec

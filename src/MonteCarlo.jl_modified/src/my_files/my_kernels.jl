@@ -2,14 +2,14 @@
 ### occupation + energy + charge-density for symmetry-optimized Discrete_MBF1
 ###########################
 @inline Base.@propagate_inbounds function occupation_kernel(i, flv, N, G::_GM{<: Matrix}, 
-    ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    ::Union{Discrete_MBF1_symm, Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
     shift = N * (flv - 1)
     return 2 - 2real(G.val[i+shift, i+shift])
 end
 
 @inline Base.@propagate_inbounds function kinetic_energy_kernel(mc, model, 
     ::Nothing,  G::_GM{<: Matrix}, flv, 
-    ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    ::Union{Discrete_MBF1_symm, Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
     # <T> = \sum Tji * (Iij - Gij) = - \sum Tji * (Gij - Iij)
     T = mc.stack.hopping_matrix
     N = length(lattice(mc))
@@ -22,12 +22,38 @@ end
     output
 end
 
+@inline Base.@propagate_inbounds function kinetic_energy_kernel(mc, model, 
+    ::Nothing,  packed_greens::_GM4{<: Matrix}, flv, 
+    ::Union{Discrete_MBF1_symm, Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
+    G00, G0l, Gl0, Gll = packed_greens
+    T = mc.stack.hopping_matrix
+    N = length(lattice(mc))
+    output = zero(eltype(Gll.val))
+    @inbounds @fastmath for i in 1:N, j in 1:N
+        # using T Hermitian for better cache friendliness (conj(Tᵢⱼ) = Tⱼᵢ)
+        output += 2real(conj(T[i, j]) * (I[i, j] - Gll.val[i, j]))+
+                2real(conj(T[i+N, j+N]) * (I[i, j] - Gll.val[i+N, j+N]))
+    end
+    output
+end
+@inline Base.@propagate_inbounds function kinetic_energy_kernel(mc, model, ::Nothing, 
+    packed_greens::_GM4{<: Matrix}, flv, ::AbstractField)
+    G00, G0l, Gl0, Gll = packed_greens
+    T = mc.stack.hopping_matrix
+    output = zero(eltype(Gll.val))
+    @inbounds @fastmath for i in axes(Gll.val, 1), j in axes(Gll.val, 2)
+        # using T Hermitian for better cache friendliness (conj(Tᵢⱼ) = Tⱼᵢ)
+        output += conj(T[i, j]) * (I[i, j] - Gll.val[i, j])
+    end
+    output
+end
+
 @inline Base.@propagate_inbounds function kinetic_energy_kernel_bonds(mc, model, ::Nothing, G::_GM{T}, flv) where {T}
     return kinetic_energy_kernel_bonds(mc, model, nothing, G, flv, field(mc))
 end
 @inline Base.@propagate_inbounds function kinetic_energy_kernel_bonds(mc, model, 
     ::Nothing,  G::_GM{<: Matrix}, flv, 
-    ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    ::Union{Discrete_MBF1_symm, Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
     # <T> = \sum Tji * (Iij - Gij) = - \sum Tji * (Gij - Iij)
     T = mc.stack.hopping_matrix
     l = lattice(mc)
@@ -56,7 +82,7 @@ end
 
 @inline Base.@propagate_inbounds function full_cdc_kernel(
     mc, ::Model, ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
-    flv, ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    flv, ::Union{Discrete_MBF1_symm, Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
     i, j = ij
     α, γ = flv
     G00, G0l, Gl0, Gll = packed_greens
@@ -76,13 +102,32 @@ end
 Computes the interaction energy - U ⟨(n↑ - 0.5)(n↓ - 0.5)⟩. Note that this is a 
 model specific method.
 """
-
 @inline Base.@propagate_inbounds function interaction_energy_kernel(mc, model::TwoBandModel, 
-        ::Nothing, G::_GM{<: Matrix}, flv)
-    return interaction_energy_kernel(mc, model, nothing, G, flv, field(mc)) 
+        ::Nothing, packed_greens::Union{_GM{T}, _GM4{T}}, flv) where {T <: Matrix}
+    return interaction_energy_kernel(mc, model, nothing, packed_greens, flv, field(mc)) 
 end
+
+
 @inline Base.@propagate_inbounds function interaction_energy_kernel(mc, model::TwoBandModel, ::Nothing, 
-    G::_GM{<: Matrix}, flv, ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm})
+    packed_greens::_GM4{<: Matrix}, flv, ::Union{Discrete_MBF1_symm, Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm})
+    G00, G0l, Gl0, Gll = packed_greens
+    N = length(lattice(model))
+    output = zero(eltype(Gll.val))
+    outtmp1 = zero(eltype(Gll.val))
+    outtmp2 = zero(eltype(Gll.val))
+    @inbounds @fastmath for i in 1:N
+        outtmp1=(2*real(Gll.val[i, i+N]+Gll.val[i+N, i]))^2;   
+        outtmp2=2*real(Gll.val[i, i]+Gll.val[i+N, i+N])-
+            4*real(Gll.val[i, i]*Gll.val[i+N, i+N])-
+            2*(real(Gll.val[i, i+N])^2-imag(Gll.val[i, i+N])^2)-
+            2*(real(Gll.val[i+N, i])^2-imag(Gll.val[i+N, i])^2);
+        output-=outtmp1+outtmp2
+    end
+    return output * model.U
+end
+
+@inline Base.@propagate_inbounds function interaction_energy_kernel(mc, model::TwoBandModel, ::Nothing, 
+    G::_GM{<: Matrix}, flv, ::Union{Discrete_MBF1_symm, Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm})
     N = length(lattice(model))
     output = zero(eltype(G.val))
     outtmp1 = zero(eltype(G.val))
@@ -134,6 +179,25 @@ end
     end
     return output * model.U
 end
+@inline Base.@propagate_inbounds function interaction_energy_kernel(mc, model::TwoBandModel, ::Nothing, 
+    packed_greens::_GM4{<: Matrix}, flv, ::Discrete_MBF1_X)
+    G00, G0l, Gl0, Gll = packed_greens
+    N = length(lattice(model))
+    output = zero(eltype(Gll.val))
+    outtmp1 = zero(eltype(Gll.val))
+    outtmp2 = zero(eltype(Gll.val))
+    @inbounds @fastmath for i in 1:N
+        outtmp1=(-Gll.val[i, i + 3N] - Gll.val[i + N, i + 2N] - 
+            Gll.val[i + 2N, i + N] - Gll.val[i + 3N, i])^2;   
+        outtmp2=-Gll.val[i, i + 3N]^2 + Gll.val[i + N, i + N] - Gll.val[i + N, i + 2N]^2 - 2*Gll.val[i, i + 2N]*Gll.val[i + N, i + 3N] - Gll.val[i + 2N, i + N]^2 + Gll.val[i + 2N, i + 2N] - 
+        2*Gll.val[i + N, i + N]*Gll.val[i + 2N, i + 2N] - 2*Gll.val[i, i + N]*Gll.val[i + 2N, i + 3N] - Gll.val[i + 3N, i]^2 - 2*Gll.val[i + 2N, i]*Gll.val[i + 3N, i + N] - 
+        2*Gll.val[i + N, i]*Gll.val[i + 3N, i + 2N] + Gll.val[i, i]*(1 - 2*Gll.val[i + 3N, i + 3N]) + Gll.val[i + 3N, i + 3N];
+        output-=outtmp1+outtmp2
+    end
+    return output * model.U
+end
+
+
 ###
 @inline Base.@propagate_inbounds function interaction_energy_kernel(mc, model::TwoBandModel, ::Nothing, 
     G::_GM{<: Matrix}, flv, ::Union{Cont_MBF2, Discrete_MBF2})
@@ -230,7 +294,7 @@ end
     return -2*real(G.val[i, i+N]+G.val[i+N, i])
 end
 @inline Base.@propagate_inbounds function Mx_z_kernel(mc, model::TwoBandModel, i, G::_GM{<: Matrix}, 
-    flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    flv, ::Union{Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
     return 0
 end
 
@@ -257,7 +321,7 @@ end
     G.val[i + 3N, i]
 end
 @inline Base.@propagate_inbounds function Mx_x_kernel(mc, model::TwoBandModel, i, G::_GM{<: Matrix}, 
-    flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    flv, ::Union{Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
     N = length(lattice(model))
     return -2*real(G.val[i, i+N]+G.val[i+N, i])
 end
@@ -275,7 +339,7 @@ end
     G.val[i + 3N, i])
 end
 @inline Base.@propagate_inbounds function Mx_y_kernel(mc, model::TwoBandModel, i, G::_GM{<: Matrix}, 
-    flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    flv, ::Union{Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
     N = length(lattice(model))
     return 2*imag(G.val[i, i+N]-G.val[i+N, i])
    
@@ -312,7 +376,7 @@ end
 end
 @inline Base.@propagate_inbounds function full_sdc_Mx_z_kernel(
     mc, model::TwoBandModel, ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
-    flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    flv, ::Union{Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
     i, j = ij   #we treat j as j=0
     G00, G0l, Gl0, Gll = packed_greens
     N = length(lattice(model))
@@ -426,7 +490,7 @@ end
 end
 @inline Base.@propagate_inbounds function full_sdc_Mx_x_kernel(
     mc, model::TwoBandModel, ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
-    flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    flv, ::Union{Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
     i, j = ij   #we treat j as j=0
     G00, G0l, Gl0, Gll = packed_greens
     N = length(lattice(model))
@@ -520,7 +584,7 @@ end
 end
 @inline Base.@propagate_inbounds function full_sdc_Mx_y_kernel(
     mc, model::TwoBandModel, ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
-    flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    flv, ::Union{Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
     i, j = ij   #we treat j as j=0
     G00, G0l, Gl0, Gll = packed_greens
     N = length(lattice(model))
@@ -568,7 +632,7 @@ end
 end
 @inline Base.@propagate_inbounds function full_cdc_XX_kernel(
     mc, ::Model, ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
-    flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    flv, ::Union{Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
     i, j = ij
     G00, G0l, Gl0, Gll = packed_greens
     N = length(lattice(mc))
@@ -616,7 +680,7 @@ Calculates the ⟨Δ†_++(i,τ) Δ_++(j,0)⟩ kernel
 end
 @inline Base.@propagate_inbounds function pc_swave_kernel(mc, model, 
     ij::NTuple{2},   packed_greens::_GM4{<: Matrix}, 
-    flv, ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    flv, ::Union{Discrete_MBF1_symm, Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
     i, j = ij   
     G0l= packed_greens[2]
     N = length(lattice(model))
@@ -655,7 +719,7 @@ end
 end
 @inline Base.@propagate_inbounds function pc_swave_kernel_conj(mc, model, 
     ij::NTuple{2},  packed_greens::_GM4{<: Matrix}, 
-    flv, ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    flv, ::Union{Discrete_MBF1_symm, Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
     i, j = ij   
     Gl0= packed_greens[3]
     N = length(lattice(model))   
@@ -737,7 +801,7 @@ Calculates the ⟨Δ†_±(i,τ) Δ_±(j,0)⟩ kernel
 end
 @inline Base.@propagate_inbounds function pc_spm_wave_kernel(mc, model, 
     ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
-    flv, ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    flv, ::Union{Discrete_MBF1_symm, Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
     i, j = ij   #we treat j as j=0
     G0l= packed_greens[2]
     N = length(lattice(model))
@@ -774,7 +838,7 @@ end
 end
 @inline Base.@propagate_inbounds function pc_spm_wave_kernel_conj(mc, model, 
     ij::NTuple{2},  packed_greens::_GM4{<: Matrix}, 
-    flv, ::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    flv, ::Union{Discrete_MBF1_symm, Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
     i, j = ij   #we treat j as j=0
     Gl0= packed_greens[3]
     N = length(lattice(model))
@@ -850,7 +914,7 @@ Calculates the ⟨Δ†_X(i,τ) Δ_X(j,0)⟩ kernel
 
 end
 @inline Base.@propagate_inbounds function pc_XX_wave_kernel(mc, model, ij::NTuple{2}, 
-    packed_greens::_GM4{<: Matrix}, flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    packed_greens::_GM4{<: Matrix}, flv, ::Union{Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
     i, j = ij   #we treat j as j=0
     G0l= packed_greens[2]
     N = length(lattice(model))
@@ -889,7 +953,7 @@ Calculates the ⟨Δ†_Y(i,τ) Δ_Y(j,0)⟩ kernel
     (G0l.val[j + N, i + N] - id*I[j, i])*(G0l.val[j + 3N, i + 3N] - id*I[j, i]))
 end
 @inline Base.@propagate_inbounds function pc_YYzz_wave_kernel(mc, model, ij::NTuple{2}, 
-    packed_greens::_GM4{<: Matrix}, flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    packed_greens::_GM4{<: Matrix}, flv, ::Union{Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
     i, j = ij   #we treat j as j=0
     G0l= packed_greens[2]
     N = length(lattice(model))
@@ -927,7 +991,7 @@ Calculates the ∑_{z,0,x} ⟨Δ†_Y(i,τ) Δ_Y(j,0)⟩ kernel
     3*id*I[j, i]*(G0l.val[j + 2N, i + 2N] + G0l.val[j + 3N, i + 3N] - 2*id*I[j, i]))
 end
 @inline Base.@propagate_inbounds function pc_YYsum_wave_kernel(mc, model, ij::NTuple{2}, 
-    packed_greens::_GM4{<: Matrix}, flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    packed_greens::_GM4{<: Matrix}, flv, ::Union{Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
     i, j = ij   #we treat j as j=0
     G0l= packed_greens[2]
     N = length(lattice(model))

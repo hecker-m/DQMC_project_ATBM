@@ -40,7 +40,7 @@ end
 @inline Base.@propagate_inbounds function my_cc_kernel(
     mc, ::Model, sites::NTuple{4, Int}, 
     packed_greens::_GM4{<: Matrix}, 
-    flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    flv, ::Union{Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
 
     #(s1, t1, s2, t2)= (r′, r′+ b1, r =r′+d, r+b2)
     #src1, trg1, src2, trg2 = sites      #src1 = r′+b′, trg1 = r′, src2 =r+b, trg2= r

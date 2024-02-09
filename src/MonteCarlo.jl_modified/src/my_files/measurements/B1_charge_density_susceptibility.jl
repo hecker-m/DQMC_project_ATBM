@@ -54,7 +54,6 @@ end
 end
 
 
-
 @inline Base.@propagate_inbounds function full_B1_charge_density_kernel(
         mc, model::TwoBandModel, isks::NTuple{10}, packed_greens::_GM4{<: Matrix}, 
         flv, ::AbstractMagnBosonField  )
@@ -115,12 +114,11 @@ end
 
 @inline Base.@propagate_inbounds function full_B1_charge_density_kernel(
         mc, model::TwoBandModel, isks::NTuple{10}, packed_greens::_GM4{<: Matrix}, 
-        flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+        flv, ::Union{Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
     i, iPa1, iMa1, iPa2, iMa2, k, kPa1, kMa1, kPa2, kMa2 = isks   # i, i+a1, i-a1, etc.
     G00, G0l, Gl0, Gll = packed_greens
     N = length(lattice(model))
     id = I[G0l.k, G0l.l] 
-
 
     return 2*real(-(G0l.val[kPa1, i]*Gl0.val[iMa1, k]) + G0l.val[kPa2, i]*Gl0.val[iMa1, k] + G0l.val[kPa1, i]*Gl0.val[iMa2, k] - G0l.val[kPa2, i]*Gl0.val[iMa2, k] - G0l.val[kPa1, i]*Gl0.val[iPa1, k] + 
     G0l.val[kPa2, i]*Gl0.val[iPa1, k] + G0l.val[kMa2, i]*(Gl0.val[iMa1, k] - Gl0.val[iMa2, k] + Gl0.val[iPa1, k] - Gl0.val[iPa2, k]) + G0l.val[kPa1, i]*Gl0.val[iPa2, k] - 
@@ -142,5 +140,16 @@ end
         G00.val[kPa2 + N, k + N])*real(Gll.val[iMa1, i] - Gll.val[iMa2, i] + Gll.val[iPa1, i] - Gll.val[iPa2, i] + Gll.val[iMa1 + N, i + N] - Gll.val[iMa2 + N, i + N] + 
         Gll.val[iPa1 + N, i + N] - Gll.val[iPa2 + N, i + N]) 
 end
+
+
+
+
+
+
+
+
+
+
+
 
 

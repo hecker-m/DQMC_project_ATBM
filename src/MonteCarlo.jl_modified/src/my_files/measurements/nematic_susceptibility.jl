@@ -420,7 +420,7 @@ end
 
 @inline Base.@propagate_inbounds function full_nem_kernel(
     mc, model::TwoBandModel, klkPlP::NTuple{4}, packed_greens::_GM4{<: Matrix}, 
-    flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    flv, ::Union{Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
   k, l, kPi, lPj = klkPlP   #k, l, k+i, l+j
   G00, G0l, Gl0, Gll = packed_greens
   N = length(lattice(model))
@@ -525,6 +525,74 @@ end
   return tcoscos1 + tcoscos2 +tcoscos3 
 end
 
+"""
+Calculates the XX-kernel of the nematic susceptibility  
+"""
+@inline Base.@propagate_inbounds function nem_X_kernel(mc::DQMC, model::TwoBandModel, klkPlP::NTuple{4}, 
+    G::Union{GreensMatrix, _GM4{T}}, flv) where {T <: Matrix}
+    return nem_X_kernel(mc, model, klkPlP, G, flv, field(mc))
+end
+@inline Base.@propagate_inbounds function nem_X_kernel(mc::DQMC, model::TwoBandModel, klkPlP::NTuple{4}, 
+    G::GreensMatrix, flv, field::AbstractMagnBosonField)
+    return nem_X_kernel(mc, model, klkPlP, (G, G, G, G), flv, field)
+end
+
+
+@inline Base.@propagate_inbounds function nem_X_kernel(
+  mc, model::TwoBandModel, klkPlP::NTuple{4}, packed_greens::_GM4{<: Matrix}, 
+  flv, ::Union{Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
+k, l, kPi, lPj = klkPlP   #k, l, k+i, l+j
+G00, G0l, Gl0, Gll = packed_greens
+N = length(lattice(model))
+id = I[G0l.k, G0l.l] 
+
+tcoscos1=(-4*real(G00.val[l, l + N] + G00.val[l + N, l])*real(G00.val[lPj, lPj + N] + G00.val[lPj + N, lPj]) - 2*I[l, lPj]*real(G00.val[lPj, l] + G00.val[lPj + N, l + N]) + 
+  2*real(G00.val[l, lPj + N]*G00.val[lPj, l + N] + G00.val[lPj, l]*G00.val[l + N, lPj + N] + G00.val[l + N, lPj]*G00.val[lPj + N, l] + G00.val[l, lPj]*G00.val[lPj + N, l + N]))*
+  (-4*real(Gll.val[k, k + N] + Gll.val[k + N, k])*real(Gll.val[kPi, kPi + N] + Gll.val[kPi + N, kPi]) - 2*I[k, kPi]*real(Gll.val[kPi, k] + Gll.val[kPi + N, k + N]) + 
+  2*real(Gll.val[k, kPi + N]*Gll.val[kPi, k + N] + Gll.val[kPi, k]*Gll.val[k + N, kPi + N] + Gll.val[k + N, kPi]*Gll.val[kPi + N, k] + Gll.val[k, kPi]*Gll.val[kPi + N, k + N]));
+
+tcoscos2=2*real((conj(G0l.val[l + N, kPi])*conj(G0l.val[lPj + N, k]) - conj(G0l.val[l + N, k])*conj(G0l.val[lPj + N, kPi]))*
+  (conj(Gl0.val[k + N, lPj])*conj(Gl0.val[kPi + N, l]) - conj(Gl0.val[k + N, l])*conj(Gl0.val[kPi + N, lPj])) + 
+  (-(conj(Gl0.val[k, lPj])*conj(Gl0.val[kPi, l])) + conj(Gl0.val[k, l])*conj(Gl0.val[kPi, lPj]))*
+  conj((G0l.val[l + N, kPi + N] - id*I[l, kPi])*(-G0l.val[lPj + N, k + N] + id*I[lPj, k]) + (G0l.val[l + N, k + N] - id*I[l, k])*
+    (G0l.val[lPj + N, kPi + N] - id*I[lPj, kPi])) + 4*conj(G0l.val[lPj + N, kPi])*conj(Gl0.val[kPi + N, lPj])*G0l.val[l, k + N]*Gl0.val[k, l + N] + 
+  (G0l.val[l, kPi + N]*G0l.val[lPj, k + N] - G0l.val[l, k + N]*G0l.val[lPj, kPi + N])*(Gl0.val[k, lPj + N]*Gl0.val[kPi, l + N] - Gl0.val[k, l + N]*Gl0.val[kPi, lPj + N]) + 
+  2*(Gl0.val[k + N, l + N]*Gl0.val[kPi + N, lPj] - Gl0.val[k + N, lPj]*Gl0.val[kPi + N, l + N])*(G0l.val[lPj + N, kPi]*(G0l.val[l, k] - id*I[l, k]) + 
+  G0l.val[lPj + N, k]*(-G0l.val[l, kPi] + id*I[l, kPi])) + 4*conj(Gl0.val[k, lPj])*Gl0.val[kPi + N, l + N]*(G0l.val[l, kPi] - id*I[l, kPi])*
+  (conj(G0l.val[lPj + N, k + N]) - id*I[lPj, k]) + 2*(-(conj(Gl0.val[k, lPj])*conj(Gl0.val[kPi + N, l])) + conj(Gl0.val[k, l])*conj(Gl0.val[kPi + N, lPj]))*
+  (conj(G0l.val[lPj + N, kPi])*(conj(G0l.val[l + N, k + N]) - id*I[l, k]) + conj(G0l.val[l + N, kPi])*(-conj(G0l.val[lPj + N, k + N]) + id*I[lPj, k])) + 
+  4*(Gl0.val[k, l + N]*Gl0.val[kPi + N, lPj] - Gl0.val[k, lPj]*Gl0.val[kPi + N, l + N])*(G0l.val[l, k + N]*G0l.val[lPj + N, kPi] + 
+  (G0l.val[l, kPi] - id*I[l, kPi])*(-G0l.val[lPj + N, k + N] + id*I[lPj, k])) + 2*(-(Gl0.val[k, lPj + N]*Gl0.val[kPi + N, l + N]) + Gl0.val[k, l + N]*Gl0.val[kPi + N, lPj + N])*
+  (G0l.val[lPj, k + N]*(-G0l.val[l, kPi] + id*I[l, kPi]) + G0l.val[l, k + N]*(G0l.val[lPj, kPi] - id*I[lPj, kPi])) + 
+  (-(Gl0.val[k + N, lPj + N]*Gl0.val[kPi + N, l + N]) + Gl0.val[k + N, l + N]*Gl0.val[kPi + N, lPj + N])*((G0l.val[l, kPi] - id*I[l, kPi])*(-G0l.val[lPj, k] + id*I[lPj, k]) + 
+  (G0l.val[l, k] - id*I[l, k])*(G0l.val[lPj, kPi] - id*I[lPj, kPi])) + 2*(Gl0.val[k, l + N]*Gl0.val[kPi, lPj] - Gl0.val[k, lPj]*Gl0.val[kPi, l + N])*
+  (G0l.val[l, kPi + N]*(-G0l.val[lPj + N, k + N] + id*I[lPj, k]) + G0l.val[l, k + N]*(G0l.val[lPj + N, kPi + N] - id*I[lPj, kPi])))+
+  4*(G0l.val[lPj + N, kPi]*Gl0.val[kPi + N, lPj]*(conj(G0l.val[l + N, k])*conj(Gl0.val[k + N, l]) + conj(Gl0.val[k + N, l + N])*(conj(G0l.val[l, k]) - id*I[l, k]) + 
+    conj(Gl0.val[k, l])*(conj(G0l.val[l + N, k + N]) - id*I[l, k])) + Gl0.val[k, lPj]*(conj(G0l.val[l, kPi + N])*conj(Gl0.val[kPi, l + N]) + 
+    conj(G0l.val[l + N, kPi])*conj(Gl0.val[kPi + N, l]) + conj(Gl0.val[kPi, l])*(conj(G0l.val[l + N, kPi + N]) - id*I[l, kPi]))*
+  (G0l.val[lPj + N, k + N] - id*I[lPj, k]) + Gl0.val[kPi + N, l + N]*(G0l.val[l, kPi] - id*I[l, kPi])*(conj(G0l.val[lPj, k + N])*conj(Gl0.val[k, lPj + N]) + 
+    conj(G0l.val[lPj + N, k])*conj(Gl0.val[k + N, lPj]) + conj(Gl0.val[k + N, lPj + N])*(conj(G0l.val[lPj, k]) - id*I[lPj, k])) + 
+  G0l.val[l, k + N]*Gl0.val[k, l + N]*(conj(G0l.val[lPj, kPi + N])*conj(Gl0.val[kPi, lPj + N]) + conj(Gl0.val[kPi + N, lPj + N])*
+    (conj(G0l.val[lPj, kPi]) - id*I[lPj, kPi]) + conj(Gl0.val[kPi, lPj])*(conj(G0l.val[lPj + N, kPi + N]) - id*I[lPj, kPi])));
+
+tcoscos3=2*real((2*conj(G00.val[l, lPj + N])*conj(G0l.val[lPj, kPi + N]) + (-conj(G0l.val[l + N, kPi + N]) + id*I[l, kPi])*I[l, lPj] + 
+  2*conj(G00.val[l, lPj])*(conj(G0l.val[lPj + N, kPi + N]) - id*I[lPj, kPi]) - 4*conj(G0l.val[l, kPi + N])*real(G00.val[lPj, lPj + N] + G00.val[lPj + N, lPj]))*
+  (-2*conj(Gl0.val[k, l + N])*conj(Gll.val[kPi, k + N]) + conj(Gl0.val[k + N, l + N])*(-2*conj(Gll.val[kPi, k]) + I[k, kPi]) + 
+  4*conj(Gl0.val[kPi, l + N])*real(Gll.val[k, k + N] + Gll.val[k + N, k])) + 
+  (2*conj(G00.val[l, lPj])*conj(G0l.val[lPj + N, kPi]) - conj(G0l.val[l + N, kPi])*I[l, lPj] + 
+  2*conj(G00.val[l, lPj + N])*(conj(G0l.val[lPj, kPi]) - id*I[lPj, kPi]) - 4*(conj(G0l.val[l, kPi]) - id*I[l, kPi])*real(G00.val[lPj, lPj + N] + G00.val[lPj + N, lPj]))*
+  (-2*conj(Gl0.val[k + N, l + N])*conj(Gll.val[kPi + N, k]) + conj(Gl0.val[k, l + N])*(-2*conj(Gll.val[kPi + N, k + N]) + I[k, kPi]) + 
+  4*conj(Gl0.val[kPi + N, l + N])*real(Gll.val[k, k + N] + Gll.val[k + N, k])) - (2*G00.val[l + N, lPj + N]*G0l.val[lPj, kPi + N] - G0l.val[l, kPi + N]*I[l, lPj] + 
+  2*G00.val[l + N, lPj]*(G0l.val[lPj + N, kPi + N] - id*I[lPj, kPi]) - 4*(G0l.val[l + N, kPi + N] - id*I[l, kPi])*real(G00.val[lPj, lPj + N] + G00.val[lPj + N, lPj]))*
+  (2*Gl0.val[k, l]*Gll.val[kPi, k + N] + Gl0.val[k + N, l]*(2*Gll.val[kPi, k] - I[k, kPi]) - 4*Gl0.val[kPi, l]*real(Gll.val[k, k + N] + Gll.val[k + N, k])) - 
+  (2*G00.val[l + N, lPj]*G0l.val[lPj + N, kPi] + (-G0l.val[l, kPi] + id*I[l, kPi])*I[l, lPj] + 2*G00.val[l + N, lPj + N]*(G0l.val[lPj, kPi] - id*I[lPj, kPi]) - 
+  4*G0l.val[l + N, kPi]*real(G00.val[lPj, lPj + N] + G00.val[lPj + N, lPj]))*(2*Gl0.val[k + N, l]*Gll.val[kPi + N, k] + Gl0.val[k, l]*(2*Gll.val[kPi + N, k + N] - I[k, kPi]) - 
+  4*Gl0.val[kPi + N, l]*real(Gll.val[k, k + N] + Gll.val[k + N, k])));
+
+
+#Note that tcoscos3 was multiplied with 4 in kate
+return tcoscos1 + tcoscos2 +tcoscos3 
+end
 
 
 

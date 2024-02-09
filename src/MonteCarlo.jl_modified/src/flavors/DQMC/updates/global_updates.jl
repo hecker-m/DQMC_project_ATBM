@@ -165,6 +165,8 @@ end
     
     if unique_flavors(mc) == 1
         detratio = detratio * detratio
+    elseif unique_flavors(mc) == 2
+        detratio=abs2(detratio)
     end
 
     return detratio, ΔE_Boson, nothing

@@ -102,7 +102,6 @@ function total_energy(
 end
 
 
-
 ################################################################################
 ### kernels
 ################################################################################
@@ -116,8 +115,8 @@ end
 
 Computes the kinetic energy ⟨T[j, i] (I[i, j] - G[i, j])⟩ = ⟨tⱼᵢ cⱼ^† cᵢ⟩
 """
-@inline Base.@propagate_inbounds function kinetic_energy_kernel(mc, model, ::Nothing, G::_GM{T}, flv) where {T}
-    return kinetic_energy_kernel(mc, model, nothing, G, flv, field(mc))
+@inline Base.@propagate_inbounds function kinetic_energy_kernel(mc, model, ::Nothing, packed_greens::Union{_GM{T}, _GM4{T}}, flv) where {T <: Matrix}
+    return kinetic_energy_kernel(mc, model, nothing, packed_greens, flv, field(mc))
 end
 @inline Base.@propagate_inbounds function kinetic_energy_kernel(mc, model, ::Nothing, 
         G::_GM{<: Matrix}, flv, ::AbstractField)

@@ -64,6 +64,8 @@ end
     copyto!(tc, c)
     u.count+=1;
     N=length(lattice(mc))
+    k=Int8(length(field.x))   #number of discretization (typically k=4)
+
     if mod(u.count, u.full_update_interval)==0
         Nflipped=N
     else
@@ -71,7 +73,7 @@ end
     end
     shuffle!(u.indices)
     for slice in 1:nslices(mc), i in u.indices[1:Nflipped]
-        c[:, i, slice] .= Int8(5) .- c[:, i, slice]
+        c[:, i, slice] .= Int8(k+1) .- c[:, i, slice]
     end
     return nothing
 end
@@ -83,9 +85,11 @@ A global update that flips the configuration (±1 -> ∓1).
 """
 @bm function propose_conf!(::GlobalFlip, mc, model, 
     field::Union{Discrete_MBF1, Discrete_MBF1_X, Discrete_MBF1_symm, Discrete_MBF1_X_symm})
+
+    k=Int8(length(field.x))   #number of discretization (typically k=4)
     c = conf(field); tc = temp_conf(field)
     copyto!(tc, c)
-    c .= Int8(5) .- c
+    c .= Int8(k+1) .- c
     return nothing
 end
 
@@ -146,7 +150,7 @@ end
         for  column in u.indices[1:Lshifted]
             for iy in 1:L
                 src=column+(iy-1)*L
-                trg=Bsrcdir2trg[src,5] # dir=5 is a shift ty=a*ey
+                trg=Bsrcdir2trg[src, L+1] # dir=L+1 is a shift ty=a*ey
                 for slice in 1:nslices(mc)
                     c[:, trg, slice] .= tc[:, src, slice]
                 end
@@ -226,6 +230,7 @@ end
     L= model.l.Ls[1]
     u.count+=1;
     N=length(lattice(mc))
+    k=Int8(length(field.x))   #number of discretization (typically k=4)
     if mod(u.count, u.full_update_interval)==0
         Nflipped=N
     else
@@ -236,7 +241,7 @@ end
         for  i in u.indices[1:Nflipped]
             iy, ix=fldmod1(i, L) 
             if isodd(ix+iy) 
-                c[:, i, slice] .= Int8(5) .- c[:, i, slice]
+                c[:, i, slice] .= Int8(k+1) .- c[:, i, slice]
             end
         end
     end
@@ -280,6 +285,8 @@ end
     L= model.l.Ls[1]
     u.count+=1;
     N=length(lattice(mc))
+    k=Int8(length(field.x))   #number of discretization (typically k=4)
+
     if mod(u.count, u.full_update_interval)==0
         Nflipped=N
     else
@@ -291,7 +298,7 @@ end
             for  i in u.indices[1:Nflipped]
                 iy, ix=fldmod1(i, L) 
                 if isodd(ix) 
-                    c[:, i, slice] .= Int8(5) .- c[:, i, slice]
+                    c[:, i, slice] .= Int8(k+1) .- c[:, i, slice]
                 end
             end
         end
@@ -300,13 +307,15 @@ end
             for  i in u.indices[1:Nflipped]
                 iy, ix=fldmod1(i, L) 
                 if isodd(iy) 
-                    c[:, i, slice] .= Int8(5) .- c[:, i, slice]
+                    c[:, i, slice] .= Int8(k+1) .- c[:, i, slice]
                 end
             end
         end
     end
     return nothing
 end
+
+#### TODO: Only works for k=4!
 """
     computes the (probabilistic) outcome of (ϕ(i1) +ϕ(i2))/2
 """
@@ -321,7 +330,7 @@ end
 
 """
     AddShiftedConfiguration([mc, model])
-
+TODO: Only works for k=4!
 A global update that tests for ϕ`(r)=[ϕ(r) + ϕ(r+tₓ)]/2, or ty.
 Apparently, this update changes the weights [spin flip don`t do that],
 which is problematic as it leads to fac ~ 10^4, and acc_rate=1. 
@@ -393,6 +402,7 @@ end
 
 """
     AddStaggeredConfiguration([mc, model])
+TODO: Only works for k=4!
 
 A global update that tests for ϕ`(r)=ϕ(r) *(1+e^(i(Q₁+Q₂)⋅r))/2.
 """
@@ -487,6 +497,7 @@ end
     c = conf(field); tc = temp_conf(field)
     copyto!(tc, c)
     L= model.l.Ls[1]
+    k=Int8(length(field.x))   #number of discretization (typically k=4)
     u.count+=1;
     odds=true
     dirx=isodd(div(u.count, 3))   #trying three times x, then 3 times y, etc.
@@ -509,7 +520,7 @@ end
             if (odds && isodd(ix+iy)) || (!(odds) && iseven(ix+iy))
                 av_vec=0.5*(field.x[tc[:, iP, slice]]+ field.x[tc[:, iM, slice]])  
                 if av_vec ⋅ field.x[tc[:, i, slice]] <0 
-                    c[:, i, slice] .= Int8(5) .- tc[:, i, slice]                                              
+                    c[:, i, slice] .= Int8(k+1) .- tc[:, i, slice]                                              
                 end
             end
         end
@@ -555,6 +566,7 @@ end
     c = conf(field); tc = temp_conf(field)
     copyto!(tc, c)
     L= model.l.Ls[1]
+    k=Int8(length(field.x))   #number of discretization (typically k=4)
     u.count+=1;
     dirx=isodd(div(u.count, 3))   #trying three times x, then 3 times y, etc.
     N=length(lattice(mc))
@@ -574,7 +586,7 @@ end
             end                      
             av_vec=0.5*(field.x[tc[:, iP, slice]]+ field.x[tc[:, iM, slice]])  
             if av_vec ⋅ field.x[tc[:, i, slice]] <0 
-                c[:, i, slice] .= Int8(5) .- tc[:, i, slice]                                              
+                c[:, i, slice] .= Int8(k+1) .- tc[:, i, slice]                                              
             end 
         end
     end

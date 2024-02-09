@@ -28,6 +28,21 @@ function Cont_MBF1(param::DQMCParameters,model::Model)
     Array{Float64}(undef, 1,length(lattice(model)), param.slices), 
     param.delta_tau, sqrt(2model.U) * param.delta_tau, Vector{Float64}(undef,1))
 end
+
+struct Cont_MBF1_X_symm <: AbstractContMBF #Continuous magnetic boson field with Nϕ=1
+    temp_conf::Array{Float64}
+    conf::Array{Float64}
+    delta_tau_copy::Float64     #for calculation of energy_boson it proves useful to have it saved here too
+    α::Float64                  #α=  sqrt(2U) * δτ, useful for interaction matrix
+    temp_vec::Vector{Float64}
+end
+function Cont_MBF1_X_symm(param::DQMCParameters,model::Model)
+
+    Cont_MBF1_X_symm(Array{Float64}(undef, 1, length(lattice(model)), param.slices),
+    Array{Float64}(undef, 1,length(lattice(model)), param.slices), 
+    param.delta_tau, sqrt(2model.U) * param.delta_tau, Vector{Float64}(undef,1))
+end
+
 struct Cont_MBF2 <: AbstractContMBF     #Continuous magnetic boson field with Nϕ=2
     temp_conf::Array{Float64}
     conf::Array{Float64}
@@ -71,43 +86,44 @@ function init_interaction_matrix(f::AbstractMagnBosonField, m::Model)
     zeros(m.peierls ==true ? ComplexF64 : interaction_eltype(f),N*flv, N*flv)
 end
 
-vmul!(C::Matrix, A::Hermitian, B::SparseMatrixCSC) = vmul!(C, A.data, B) 
-vmul!(C::Matrix, A::SparseMatrixCSC, B::Hermitian) = vmul!(C, A, B.data) 
-function vmul!(C::Matrix, A::SparseMatrixCSC, B::Matrix)
-    @debug "vmul!($(typeof(C)), $(typeof(A)), $(typeof(B)))"
-    mul!(C, A, B)        
-end
-function vmul!(C::Matrix, A::Matrix, B::SparseMatrixCSC)
-    @debug "vmul!($(typeof(C)), $(typeof(A)), $(typeof(B)))"
-    mul!(C, A, B)        
-end
 
 Base.rand(f::AbstractContMBF) = rand(size(f.conf)[1], size(f.conf)[2],size(f.conf)[3])
 function Random.rand!(f::AbstractContMBF; range::Float64=1.0)
     rand!(f.conf)
     f.conf .= 2range .* f.conf .-range  #intial configuration is ∈[-range,range]
 end
-compressed_conf_type(::AbstractContMBF) = Array
+
+compressed_conf_type(::Type{<: AbstractMagnBosonField}) = Array
+compressed_conf_type(::Type{<: AbstractContMBF}) = Array
 compressed_conf_type(::Type{<: DQMC}, ::Type{<: TwoBandModel}) = Array
 
-function ConfigRecorder(::Type{<: AbstractMagnBosonField}, rate::Int = 10)
-    ConfigRecorder{Array}(rate)
+function compress(field::AbstractContMBF)
+    return copy(field.conf)
 end
-function ConfigRecorder(::Type{<: AbstractContMBF}, rate::Int = 10)
-    ConfigRecorder{Array}(rate)
+function decompress(field::AbstractContMBF, c)
+    return c
 end
 
-function Base.push!(c::ConfigRecorder, field::AbstractContMBF, sweep)
-    (sweep % c.rate == 0) && push!(c.configs, copy(field.conf)) 
+function ConfigRecorder(field_type::Type{<: AbstractMagnBosonField}, rate::Int = 10)
+    compressed_type=compressed_conf_type(field_type)
+    ConfigRecorder{compressed_type}(rate)
+end
+# function ConfigRecorder(::Type{<: AbstractContMBF}, rate::Int = 10)
+#     ConfigRecorder{Array}(rate)
+# end
+
+function Base.push!(c::ConfigRecorder, field::AbstractMagnBosonField, sweep)
+    (sweep % c.rate == 0) && push!(c.configs, compress(field)) 
     nothing
 end
 
-function BufferedConfigRecorder(::Type{<: AbstractContMBF}, filename; rate = 10, chunk_size = 1000)
-    BufferedConfigRecorder{Array}(filename, rate, chunk_size)
+function BufferedConfigRecorder(field_type::Type{<: AbstractMagnBosonField}, filename; rate = 10, chunk_size = 1000)
+    compressed_type=compressed_conf_type(field_type)
+    BufferedConfigRecorder{compressed_type}(filename, rate, chunk_size)
 end
 
-function Base.push!(cr::BufferedConfigRecorder, field::AbstractContMBF, sweep)
-    (sweep % cr.rate == 0) && _push!(cr, field.conf)
+function Base.push!(cr::BufferedConfigRecorder, field::AbstractMagnBosonField, sweep)
+    (sweep % cr.rate == 0) && _push!(cr, compress(field))
     nothing
 end
 
@@ -161,6 +177,15 @@ end
     return detratio, ΔE_boson, f.temp_vec
 end
 
+@inline function propose_local(mc::DQMC, model::Model, f::Cont_MBF1_X_symm, i::Int, slice::Int)
+    f.temp_vec[1]=f.conf[1,i, slice] + randuniform(mc.parameters.box_local)   
+    ΔE_boson ::Float64=0.5*mc.parameters.delta_tau*(f.temp_vec[1]^2 - f.conf[1,i, slice]^2)
+    detratio = calculate_detratio!(mc, model , i, f.temp_vec)
+    return abs2(detratio), ΔE_boson, f.temp_vec
+end
+
+
+
 @inline function propose_local(mc::DQMC, model::Model, f::AbstractContMBF, i::Int, slice::Int)
     f.temp_vec[:] = f.conf[:,i, slice] + randuniform(mc.parameters.box_local, mc.parameters.Nϕ)
     ΔE_boson ::Float64=0.5*mc.parameters.delta_tau*(f.temp_vec⋅f.temp_vec-f.conf[:,i, slice]⋅f.conf[:,i, slice])
@@ -178,28 +203,6 @@ end
 
 
 
-
-
-
-
-#= already defined in field.jl
-function update_greens!(cache::StandardFieldCache, G, i, N)
-    # calculate Δ R⁻¹
-    vldiv22!(cache, cache.R, cache.Δ)
-    
-    # calculate (I - G)[:, i:N:end]
-    vsub!(cache.IG, I, G, i, N)
-
-    # calculate {Δ R⁻¹} * G[i:N:end, :]
-    vmul!(cache.G, cache.invRΔ, G, i, N)
-
-    # update greens function 
-    # G[m, n] -= {(I - G)[m, i:N:end]} {{Δ R⁻¹} * G[i:N:end, n]}
-    vsubkron!(G, cache.IG, cache.G)
-
-    nothing
-end
-=#
 
 
 ###############################################
@@ -226,6 +229,23 @@ end
         result[i+N,i+3N]    = -power*sh3
         result[i+2N,i]      = power*sh3
         result[i+3N,i+N]    = -power*sh3
+    end
+    nothing
+end
+
+# exp(-power*δτ*V)
+@inline function interaction_matrix_exp!(mc::DQMC, model::TwoBandModel, f::Cont_MBF1_X_symm, 
+    result::Union{Matrix{G},SparseMatrixCSC}, slice::Int, power::Float64) where G
+    N = length(lattice(mc))
+    #result.= 0.0 #I am assuming result=eV always, and eV is (set and stays) zero everywhere except for the positions below.
+    @inbounds for i=1:N
+
+        ch3 = cosh(f.α *f.conf[1,i,slice])  # α= sqrt(2U) *δτ
+        sh3 = sinh(f.α *f.conf[1,i,slice])
+        result[i,i]         = ch3
+        result[i+N,i+N]     = ch3
+        result[i,i+N]      = power*sh3
+        result[i+N,i]      = power*sh3
     end
     nothing
 end
@@ -320,6 +340,18 @@ end
     eVop[2,3] = zero(G)
     eVop[3,2] = zero(G)
     eVop[4,1] = zero(G)
+    return nothing
+end
+
+@inline function interaction_matrix_exp_op!(mc::DQMC, model::TwoBandModel, f::Cont_MBF1_X_symm, 
+    op::Vector{Float64}, power::Float64=1., eVop::Matrix{G}=mc.stack.field_cache.eVop1) where G
+
+    ch3 = cosh(f.α * op[1]) # α= sqrt(2U) *δτ
+    sh3 = sinh(f.α * op[1])
+    eVop[1,1] = ch3
+    eVop[2,2] = ch3
+    eVop[1,2] = power*sh3
+    eVop[2,1] = power*sh3
     return nothing
 end
 

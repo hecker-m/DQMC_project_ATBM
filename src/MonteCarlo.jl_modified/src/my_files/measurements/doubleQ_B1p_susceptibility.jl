@@ -814,7 +814,7 @@ end
 
 @inline Base.@propagate_inbounds function full_B1p_Q1Q2_kernel(
   mc, model::TwoBandModel, klkPlP::NTuple{4}, packed_greens::_GM4{<: Matrix}, 
-  flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+  flv, ::Union{Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
   k, l, kPi, lPj = klkPlP   #k, l, k+i, l+j
   G00, G0l, Gl0, Gll = packed_greens
   N = length(lattice(model))
@@ -1335,7 +1335,7 @@ end
 
 @inline Base.@propagate_inbounds function XX_B1p_Q1Q2_kernel(
   mc, model::TwoBandModel, klkPlP::NTuple{4}, packed_greens::_GM4{<: Matrix}, 
-  flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+  flv, ::Union{Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
   k, l, kPi, lPj = klkPlP   #k, l, k+i, l+j
   G00, G0l, Gl0, Gll = packed_greens
   N = length(lattice(model))

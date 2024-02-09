@@ -171,7 +171,7 @@ end
     return -G.val[i, i + 2N] - G.val[i + N, i + 3N] - G.val[i + 2N, i] - G.val[i + 3N, i + N]
 end
 @inline Base.@propagate_inbounds function charge_X_OP_kernel(i, N, G::_GM{<: Matrix}, 
-    ::Union{Discrete_MBF1_X, Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    ::Union{Discrete_MBF1_X, Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
     return 0
 end
 @bm function measure!(::Nothing, m::DQMCMeasurement{typeof(charge_X_OP_kernel)}, 
@@ -222,7 +222,7 @@ end
     return 4 - G.val[i, i] - G.val[i + N, i + N] - G.val[i + 2N, i + 2N] - G.val[i + 3N, i + 3N]
 end
 @inline Base.@propagate_inbounds function proxy_A1p_OP_kernel(i, N, G::_GM{<: Matrix}, 
-    ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    ::Union{Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
     return 4 - 2*real(G.val[i, i] +G.val[i + N, i + N])
 end
 @bm function measure!(::Nothing, m::DQMCMeasurement{typeof(proxy_A1p_OP_kernel)}, mc::DQMC, packed_greens)
@@ -276,7 +276,7 @@ end
     G.val[iMa1 + 3N, i + 3N] + G.val[iMa2 + 3N, i + 3N] - G.val[iPa1 + 3N, i + 3N] + G.val[iPa2 + 3N, i + 3N]
 end
 @inline Base.@propagate_inbounds function proxy_B1_OP_kernel(is::NTuple{5}, N, 
-    G::_GM{<: Matrix}, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    G::_GM{<: Matrix}, ::Union{Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
     i, iPa1, iMa1, iPa2, iMa2 =is
     return 2 *real(-G.val[iMa1, i] + G.val[iMa2, i] - G.val[iPa1, i] + G.val[iPa2, i] - 
     G.val[iMa1 + N, i + N] + G.val[iMa2 + N, i + N] - 
@@ -418,7 +418,7 @@ end
 end
 @inline Base.@propagate_inbounds function full_nematic_OP_kernel(
         mc, model::TwoBandModel, kkPp::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
-        flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+        flv, ::Union{Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
     k, kPp = kkPp   # k, k+p
     G00, G0l, Gl0, Gll = packed_greens
     N = length(lattice(model))
@@ -468,7 +468,7 @@ end
 
 @inline Base.@propagate_inbounds function full_B1p_x_OP_kernel(
         mc, model::TwoBandModel, kkPp::NTuple{2}, packed_greens::_GM4{<: Matrix}, flv, 
-        ::Union{Discrete_MBF1_X_symm, Discrete_MBF1_X, Discrete_MBF2_symm})
+        ::Union{Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF1_X, Discrete_MBF2_symm})
     k, kPp = kkPp   # k, k+p
     G00, G0l, Gl0, Gll = packed_greens
     N = length(lattice(model))
@@ -513,7 +513,7 @@ end
 
 @inline Base.@propagate_inbounds function full_B1p_y_OP_kernel(
         mc, model::TwoBandModel, kkPp::NTuple{2}, packed_greens::_GM4{<: Matrix}, flv, 
-        ::Union{Discrete_MBF1_X_symm, Discrete_MBF1_X, Discrete_MBF2_symm} )
+        ::Union{Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF1_X, Discrete_MBF2_symm} )
     k, kPp = kkPp   # k, k+p
     G00, G0l, Gl0, Gll = packed_greens
     N = length(lattice(model))
@@ -554,7 +554,7 @@ end
 
 @inline Base.@propagate_inbounds function full_B1p_z_OP_kernel(
         mc, model::TwoBandModel, kkPp::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
-        flv,  ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm} )
+        flv,  ::Union{Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm} )
     k, kPp = kkPp   # k, k+p
     G00, G0l, Gl0, Gll = packed_greens
     N = length(lattice(model))

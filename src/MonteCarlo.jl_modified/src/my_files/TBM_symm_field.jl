@@ -1,11 +1,11 @@
 
 
 
-unique_flavors(::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm}) = 2
-interaction_eltype(f::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm}) =Float64 
+unique_flavors(::Union{Discrete_MBF1_symm, Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm}) = 2
+interaction_eltype(::Union{Discrete_MBF1_symm, Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm}) =Float64 
 
 unique_flavors(::Discrete_MBF2_symm) = 2
-interaction_eltype(f::Discrete_MBF2_symm) =ComplexF64 
+interaction_eltype(::Discrete_MBF2_symm) =ComplexF64 
 
 function pad_to_unique_flavors(f::Discrete_MBF1_symm, m::TwoBandModel, mat)
     N = length(lattice(m))
@@ -22,7 +22,8 @@ function pad_to_unique_flavors(f::Discrete_MBF1_symm, m::TwoBandModel, mat)
         error("Failed to expand size $(size(mat)) matrix to size ($N * $flv, $N * $flv) ")
     end
 end
-function pad_to_unique_flavors(f::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm}, m::TwoBandModel, mat)
+function pad_to_unique_flavors(f::Union{Abstract_DiscreteMBF1_X_symm, Discrete_MBF2_symm, Cont_MBF1_X_symm}, 
+        m::TwoBandModel, mat)
     N = length(lattice(m))
     flv = unique_flavors(f, m)
     if size(mat, 1) == N * flv
@@ -40,14 +41,17 @@ end
 
 
 @inline function propose_local(mc::DQMC, model::Model, 
-    f::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm}, i::Int, slice::Int)
-    η_old = f.conf[1,i, slice]
+    f::Union{Discrete_MBF1_symm, Abstract_DiscreteMBF1_X_symm}, i::Int, slice::Int)
 
-    f.temp_vec[:]=@inbounds [f.choices[η_old, rand(1:3)]]
+    k=size(f.choices)[2]
+
+    η_old = f.conf[1,i, slice]
+    f.temp_vec[:]=@inbounds [f.choices[η_old, rand(1:k)]]
 
     detratio = calculate_detratio!(mc, model , i, f.temp_vec)
     return abs2(detratio) * f.w[f.temp_vec[1]]/f.w[η_old], 0.0, f.temp_vec
 end
+
 @inline function propose_local(mc::DQMC, model::Model, 
     f::Discrete_MBF2_symm, i::Int, slice::Int)
 
@@ -64,7 +68,7 @@ end
 
 
 @bm function propose_global_from_conf(mc::DQMC, m::Model, 
-    f::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    f::Union{Discrete_MBF1_symm, Abstract_DiscreteMBF1_X_symm, Discrete_MBF2_symm})
     η_new=conf(f)
     η_old=temp_conf(f)
 
@@ -92,7 +96,7 @@ end
 
 # exp(-power*δτ*V)
 @inline function interaction_matrix_exp_op!(mc::DQMC, model::TwoBandModel, 
-    f::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm},
+    f::Union{Discrete_MBF1_symm, Abstract_DiscreteMBF1_X_symm},
     η_vec::Vector{Int8}, power::Float64=1., eVop::Matrix{G}=mc.stack.field_cache.eVop1) where G
 
     sh3 = sinh(f.α * f.x[η_vec[1]]) # α=sqrt(δτ*U)
@@ -126,14 +130,14 @@ end
 
 # exp(-power*δτ*V) full (4N×4N) matrix
 @inline function interaction_matrix_exp!(mc::DQMC, model::TwoBandModel, 
-    f::Union{Discrete_MBF1_symm, Discrete_MBF1_X_symm}, 
+    f::Union{Discrete_MBF1_symm, Abstract_DiscreteMBF1_X_symm}, 
     result::Union{Matrix{G},SparseMatrixCSC}, slice::Int, power::Float64) where G
     N = length(lattice(mc))
     #result.= 0.0 #I am assuming result=eV always, and eV is (set and stays) zero everywhere except for the positions below.
     @inbounds for i=1:N
+
         sh3 = sinh(f.α * f.x[f.conf[1,i,slice]])    # α=sqrt(δτ*U)
         ch3 = cosh(f.α * f.x[f.conf[1,i,slice]])
-
         result[i,i]         = ch3
         result[i+N,i+N]   = ch3
         result[i,i+N]      = power*sh3

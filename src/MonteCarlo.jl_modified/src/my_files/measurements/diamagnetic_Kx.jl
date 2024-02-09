@@ -40,7 +40,7 @@ end
         G00.val[2N + r, 2N + rPb]*T[2N + rPb, 2N + r] + G00.val[3N + r, 3N + rPb]*T[3N + rPb, 3N + r]
 end
 @inline Base.@propagate_inbounds function kx_kernel(mc, model, st::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
-    flv, ::Union{Discrete_MBF1_X_symm, Discrete_MBF2_symm})
+    flv, ::Union{Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
     r, rPb =st
     G00, G0l, Gl0, Gll = packed_greens
     N = length(lattice(mc))
