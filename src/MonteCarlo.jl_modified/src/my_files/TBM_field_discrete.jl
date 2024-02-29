@@ -164,6 +164,9 @@ struct Discrete_8_MBF1_X_symm <: Abstract_DiscreteMBF1_X_symm #Continuous magnet
     temp_conf::Array{Int8, 3} #stores numbers η ∈ {1,...,8}
     conf::Array{Int8, 3}
     temp_vec::Vector{Int8}
+    T0::Matrix{Float64} #8×8 matrix T0[η,η`] that stores the pick-probability from configuration η to η`
+                        #In most cases  T0[η,η`]=const and it cancels everywhere. Here, we promote the choice of more likely states,
+                        #hence, we need to take it into account.
 end
 
 function Discrete_8_MBF1_X_symm(param::DQMCParameters, model::Model)
@@ -171,23 +174,32 @@ function Discrete_8_MBF1_X_symm(param::DQMCParameters, model::Model)
     xs = calc_xs(8, true)
     ws = calc_weights(8, xs)
 
-    choices = Int8[2 3 4 5 6 7 8; 1 3 4 5 6 7 8; 
-        1 2 4 5 6 7 8; 1 2 3 5 6 7 8;
-        1 2 3 4 6 7 8; 1 2 3 4 5 7 8;
-        1 2 3 4 5 6 8; 1 2 3 4 5 6 7]
+    # choices = Int8[2 3 4 5 6 7 8; 1 3 4 5 6 7 8; 
+    #     1 2 4 5 6 7 8; 1 2 3 5 6 7 8;
+    #     1 2 3 4 6 7 8; 1 2 3 4 5 7 8;
+    #     1 2 3 4 5 6 8; 1 2 3 4 5 6 7]
 
     #I promoted the four x-values with the largest weight (3-6),
     #in order to increase accepntance rate.
-    #TODO: This needs to be implemented together with the acceptance ratio
+    #This is implemented together with the acceptance ratio
     #T₀(C → C`)/T₀(C` → C)   
-    # choices = Int8[2 3 4 5 6 7 8 3 4 5 6; 1 3 4 5 6 7 8 3 4 5 6; 
-    #     1 2 4 5 6 7 8 2 4 5 6; 1 2 3 5 6 7 8 3 2 5 6;
-    #     1 2 3 4 6 7 8 3 4 7 6; 1 2 3 4 5 7 8 3 4 5 7;
-    #     1 2 3 4 5 6 8 3 4 5 6; 1 2 3 4 5 6 7 3 4 5 6]
+    choices = Int8[2 3 4 5 6 7 8 3 4 5 6; 1 3 4 5 6 7 8 3 4 5 6; 
+        1 2 4 5 6 7 8 2 4 5 6; 1 2 3 5 6 7 8 3 2 5 6;
+        1 2 3 4 6 7 8 3 4 7 6; 1 2 3 4 5 7 8 3 4 5 7;
+        1 2 3 4 5 6 8 3 4 5 6; 1 2 3 4 5 6 7 3 4 5 6]
+    T0=Matrix{Float64}(undef, size(choices)[1], size(choices)[1])    
+    for i in axes(choices)[1]
+        for j in axes(choices)[1]
+            T0[i,j]=count(ν->(Int8(ν)==Int8(j)), choices[i,:])/size(choices)[2]
+        end
+    end
+    #Write a routine to make sure T0[i,9-i], T0[9-i, i] ∀i
+    #This assures that the T0 matrix cancels for global spin-flip updates.
+
     Discrete_8_MBF1_X_symm( α, ws, xs, choices,
         Array{Int8}(undef, 1, length(lattice(model)), param.slices),
         Array{Int8}(undef, 1, length(lattice(model)), param.slices), 
-        Vector{Int8}(undef,1))
+        Vector{Int8}(undef,1), T0)
 end
 
 """
@@ -204,6 +216,7 @@ struct Discrete_12_MBF1_X_symm <: Abstract_DiscreteMBF1_X_symm #Continuous magne
     temp_conf::Array{Int8, 3} #stores numbers η ∈ {1,...,12}
     conf::Array{Int8, 3}
     temp_vec::Vector{Int8}
+    T0::Matrix{Float64} 
 end
 
 function Discrete_12_MBF1_X_symm(param::DQMCParameters, model::Model)
@@ -217,10 +230,18 @@ function Discrete_12_MBF1_X_symm(param::DQMCParameters, model::Model)
         1 2 3 4 5 6 8 9 10 11 12; 1 2 3 4 5 6 7 9 10 11 12; 
         1 2 3 4 5 6 7 8 10 11 12; 1 2 3 4 5 6 7 8 9 11 12; 
         1 2 3 4 5 6 7 8 9 10 12; 1 2 3 4 5 6 7 8 9 10 11;  ]
-        Discrete_12_MBF1_X_symm( α, ws, xs, choices,
-        Array{Int8}(undef, 1, length(lattice(model)), param.slices),
-        Array{Int8}(undef, 1, length(lattice(model)), param.slices), 
-        Vector{Int8}(undef,1))
+
+    T0=Matrix{Float64}(undef, size(choices)[1], size(choices)[1])    
+    for i in axes(choices)[1]
+        for j in axes(choices)[1]
+            T0[i,j]=count(ν->(Int8(ν)==Int8(j)), choices[i,:])/size(choices)[2]
+        end
+    end
+
+    Discrete_12_MBF1_X_symm( α, ws, xs, choices,
+    Array{Int8}(undef, 1, length(lattice(model)), param.slices),
+    Array{Int8}(undef, 1, length(lattice(model)), param.slices), 
+    Vector{Int8}(undef,1), T0)
 end
 
 """
@@ -237,6 +258,7 @@ struct Discrete_16_MBF1_X_symm <: Abstract_DiscreteMBF1_X_symm #Continuous magne
     temp_conf::Array{Int8, 3} #stores numbers η ∈ {1,...,12}
     conf::Array{Int8, 3}
     temp_vec::Vector{Int8}
+    T0::Matrix{Float64} 
 end
 
 function Discrete_16_MBF1_X_symm(param::DQMCParameters, model::Model)
@@ -252,10 +274,19 @@ function Discrete_16_MBF1_X_symm(param::DQMCParameters, model::Model)
         1 2 3 4 5 6 7 8 9 10 12 13 14 15 16; 1 2 3 4 5 6 7 8 9 10 11 13 14 15 16;  
         1 2 3 4 5 6 7 8 9 10 11 12 14 15 16; 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16;
         1 2 3 4 5 6 7 8 9 10 11 12 13 14 16; 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15;]
-        Discrete_16_MBF1_X_symm( α, ws, xs, choices,
+
+    T0=Matrix{Float64}(undef, size(choices)[1], size(choices)[1])    
+    for i in axes(choices)[1]
+        for j in axes(choices)[1]
+            T0[i,j]=count(ν->(Int8(ν)==Int8(j)), choices[i,:])/size(choices)[2]
+        end
+    end
+    
+    Discrete_16_MBF1_X_symm( α, ws, xs, choices,
         Array{Int8}(undef, 1, length(lattice(model)), param.slices),
         Array{Int8}(undef, 1, length(lattice(model)), param.slices), 
-        Vector{Int8}(undef,1))
+        Vector{Int8}(undef,1), T0
+    )
 end
 
 """

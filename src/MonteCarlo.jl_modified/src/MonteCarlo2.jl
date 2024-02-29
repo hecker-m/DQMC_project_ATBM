@@ -205,7 +205,7 @@ export interaction_matrix_type, hopping_matrix_type, greens_matrix_type, greens_
 
 
 #Iterators which I defined
-export EachSitePair_summed, EachDoubleSitePairByDistance, EachDoubleSitePairByDistance_Q1Q2, EachSitePair_B1, EachSitePair_B1_OP, EachSitePair_A1p_OP, EachSitePair_B1p_OP, EachDoubleSitePairByDistance_B1p_Q1Q2, EachWeightedBond, PS_EachBondPairByBravaisDistance, EachDistancedBondPairSummed, EachBondEachSiteSummed, EachSiteTwiceSummed, EachSiteSummed, energy_iterator, total_greens_li
+export EachSitePair_summed, EachSitePair_A1, EachDoubleSitePairByDistance, EachDoubleSitePairByDistance_Q1Q2, EachSitePair_B1, EachSitePair_B1_OP, EachSitePair_A1p_OP, EachSitePair_B1p_OP, EachDoubleSitePairByDistance_B1p_Q1Q2, EachWeightedBond, PS_EachBondPairByBravaisDistance, EachDistancedBondPairSummed, EachBondEachSiteSummed, EachSiteTwiceSummed, EachSiteSummed, energy_iterator, total_greens_li
 
 #include("precompile.jl")
 #include("Google Drive/DQMC/AFM_2_band_model/2BM_DQMC_code/TBM_field.jl")

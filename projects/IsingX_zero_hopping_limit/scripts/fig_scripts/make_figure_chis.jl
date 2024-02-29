@@ -4,11 +4,23 @@ p_input="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/DQMC_project_ATBM/proj
 # p=p_output
 
 fig_path="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/DQMC_project_ATBM/projects/" * 
-        "IsingX_zero_hopping_limit/figures/Disc8_b_10p0_dtau_0p05/"
+        "IsingX_zero_hopping_limit/figures/Disc8_b_1p0_dtau_0p05/"
 if !isdir(fig_path)
     mkdir(fig_path)
 end
         
+df_save=deepcopy(df)
+df_ϕ_save=deepcopy(df_ϕ)
+df_Binder_save=deepcopy(df_Binder)
+
+gdf_save=groupby(df_save, :T)
+gdf_ϕ_save=groupby(df_ϕ_save, :T)
+gdf_Binder_save=groupby(df_Binder_save, :T)
+nT=1;
+df=gdf_save[nT]
+df_ϕ=gdf_ϕ_save[nT]
+df_Binder=gdf_Binder_save[nT]
+
 L_plot=8;
 ϵ_plot=0.0;
 μ0=2.0;

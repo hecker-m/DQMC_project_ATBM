@@ -491,7 +491,7 @@ end
 @inline Base.@propagate_inbounds function full_sdc_Mx_x_kernel(
     mc, model::TwoBandModel, ij::NTuple{2}, packed_greens::_GM4{<: Matrix}, 
     flv, ::Union{Abstract_DiscreteMBF1_X_symm, Cont_MBF1_X_symm, Discrete_MBF2_symm})
-    i, j = ij   #we treat j as j=0
+    i, j = ij   
     G00, G0l, Gl0, Gll = packed_greens
     N = length(lattice(model))
     id = I[i, j] * I[G0l.k, G0l.l] 

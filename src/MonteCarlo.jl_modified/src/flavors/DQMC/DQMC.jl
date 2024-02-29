@@ -204,7 +204,7 @@ function initialize_run(mc;
     return th_groups, groups, indx_local, indx_global
 end
 
-function sweep_once!(mc, th_groups, groups, thermalization, t0 = time())
+function sweep_once!(mc, th_groups, groups, thermalization, t0 = time(), _measure_th_config=false)
     # Perform whatever update is scheduled next
     update(mc.scheduler, mc, mc.model) #inside: last_sweep gets increased by one
 
@@ -218,6 +218,9 @@ function sweep_once!(mc, th_groups, groups, thermalization, t0 = time())
         if mc.last_sweep == thermalization
             mc.analysis.th_runtime += time() - t0
             t0 = time()
+        end
+        if _measure_th_config
+            push!(mc.recorder, field(mc), mc.last_sweep) 
         end
     else
         push!(mc.recorder, field(mc), mc.last_sweep) #only records every mc.recorder.rate 
@@ -270,6 +273,7 @@ See also: [`resume!`](@ref)
         fail_filename = "failed_$(Dates.format(safe_before, "d_u_yyyy-HH_MM")).jld2",
         ten_reg::Int=10,
         measure_decay_τ=false,
+        _measure_th_config=false,
         random_kick::Float64=1.0
     )
 
@@ -305,7 +309,7 @@ See also: [`resume!`](@ref)
         end
 
         
-        t0 = sweep_once!(mc, th_groups, groups, thermalization, t0)
+        t0 = sweep_once!(mc, th_groups, groups, thermalization, t0, _measure_th_config)
 
         # Cancel if updates don't get accepted
         if mc.last_sweep>thermalization && (mc.last_sweep-thermalization >min_sweeps || min_sweeps < mc.last_sweep ≤ thermalization) 

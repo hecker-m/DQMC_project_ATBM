@@ -14,7 +14,7 @@ spec_heat_norm(mc) =mc.parameters.beta^2
 function fill_array!(dqmcs, key, μ_array, σ_array, my_lvl::Int, 
     ::Union{Nothing, EachSitePair_B1, EachDoubleSitePairByDistance, 
         EachDoubleSitePairByDistance_Q1Q2, EachDoubleSitePairByDistance_B1p_Q1Q2,
-        PS_EachBondPairByBravaisDistance, EachWeightedBond})
+        PS_EachBondPairByBravaisDistance, EachWeightedBond, EachSitePair_A1})
     N_worker=size(μ_array)[2]
     for worker =1:N_worker
         μ_array[:,worker] .=mean(dqmcs[worker][key].observable,1);
@@ -87,7 +87,7 @@ function value_observable(mc::DQMC, key::Symbol, μ_vec::Vector, σ_vec::Vector 
 end
 function _mean_std_error!(mc::DQMC, key::Symbol, μ_vec::Vector, σ_vec::Vector, 
     ::Union{EachSitePair_B1, EachDoubleSitePairByDistance, EachDoubleSitePairByDistance_Q1Q2, 
-    EachDoubleSitePairByDistance_B1p_Q1Q2, EachWeightedBond, PS_EachBondPairByBravaisDistance} ; 
+    EachDoubleSitePairByDistance_B1p_Q1Q2, EachWeightedBond, PS_EachBondPairByBravaisDistance, EachSitePair_A1} ; 
     q::NTuple=(0.0, 0.0), norm=1.0, idx=1 ::Int)
 
     return μ_vec[idx]*norm, σ_vec[idx]*norm
@@ -316,5 +316,6 @@ println("μ_χSDW = $(μ_χSDW) ± $(σ_χSDW)")
 println("Using χSDW(ϕ)=$(μ_χSDW_ϕ), and χSDW=$(μ_χSDW), 
 the relation (2U)χSDW+1=χSDW(ϕ) becomes $(μ_χSDW_ϕ)=$((2U)*μ_χSDW+1)")
 =#
+
 
 

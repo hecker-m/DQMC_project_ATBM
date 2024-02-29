@@ -7,7 +7,7 @@ df_Binder=sort(df_Binder, [:U, :T, :B, :L]);
 df_Binder_LU=sort(unique(df_Binder[:,[:U,:L]]),:U)
 df_Binder_LT=sort(unique(df_Binder[:,[:T,:L]]),:T, rev=true)
 
-β_list=[10, ]   
+β_list=1.0 ./ unique(df[!,:T])   
 for β0 in β_list
 
     ################
@@ -225,20 +225,20 @@ for (idx, (Ts, Ls)) in enumerate(zip(df_LT[:,:T],df_LT[:,:L]))
     rangeU=range(minU, maxU, 30)
     CairoMakie.lines!(mid, rangeU, zeros(length(rangeU)) ; linewidth=1.5, color = :black) 
 
-    eb=errorbars!(top, dfs[!,:U], (dfs[!,Symbol("SDC_Mx_x_0π")] .+ dfs[!,Symbol("SDC_Mx_x_π0")]) /Ls^2, 
-        (dfs[!,Symbol("ΔSDC_Mx_x_0π")] .+ dfs[!,Symbol("ΔSDC_Mx_x_π0")]) /Ls^2 ; linewidth=er_lw, 
+    eb=errorbars!(top, dfs[!,:U], (dfs[!,Symbol("SDC_A1_Mx_x")] ), 
+        (dfs[!,Symbol("ΔSDC_A1_Mx_x")] )  ; linewidth=er_lw, 
             whiskerwidth=10,color = colorschemes[:tab20][count])
     CairoMakie.translate!(eb, 0, 0, -0.5)
-    CairoMakie.scatterlines!(top, dfs[!,:U], (dfs[!,Symbol("SDC_Mx_x_0π")] .+ dfs[!,Symbol("SDC_Mx_x_π0")]) /Ls^2  ;  
+    CairoMakie.scatterlines!(top, dfs[!,:U], (dfs[!,Symbol("SDC_A1_Mx_x")])  ;  
         marker = :xcross, color = colorschemes[:tab20][count], 
         label = L"$():\;β=%$(1/Ts), L=%$(Ls) $", markersize=10)
 
-    eb=errorbars!(mid, dfs[!,:U], (dfs[!,Symbol("SDC_Mx_x_0π")] .+ dfs[!,Symbol("SDC_Mx_x_π0")]) /Ls^2 .-
+    eb=errorbars!(mid, dfs[!,:U], (dfs[!,Symbol("SDC_A1_Mx_x")] )  .-
         Sspin_A1_XX_analytic.(dfs[!,:U], 1/Ts, 0.5*(μ0-(-μ0)), Ls), 
-        (dfs[!,Symbol("ΔSDC_Mx_x_0π")] .+ dfs[!,Symbol("ΔSDC_Mx_x_π0")]) /Ls^2 ; linewidth=er_lw, 
+        (dfs[!,Symbol("ΔSDC_A1_Mx_x")] ) ; linewidth=er_lw, 
             whiskerwidth=10,color = colorschemes[:tab20][count])
     CairoMakie.translate!(eb, 0, 0, -0.5)
-    CairoMakie.scatterlines!(mid, dfs[!,:U], (dfs[!,Symbol("SDC_Mx_x_0π")] .+ dfs[!,Symbol("SDC_Mx_x_π0")]) /Ls^2  .-
+    CairoMakie.scatterlines!(mid, dfs[!,:U], (dfs[!,Symbol("SDC_A1_Mx_x")])   .-
         Sspin_A1_XX_analytic.(dfs[!,:U], 1/Ts, 0.5*(μ0-(-μ0)), Ls);  
         marker = :xcross, color = colorschemes[:tab20][count], 
         label = L"$():\;β=%$(1/Ts), L=%$(Ls) $", markersize=10)
@@ -406,20 +406,20 @@ for (idx, (Ts, Ls)) in enumerate(zip(df_LT[:,:T],df_LT[:,:L]))
     rangeU=range(minU, maxU, 30)
     CairoMakie.lines!(mid, rangeU, zeros(length(rangeU)) ; linewidth=1.5, color = :black) 
 
-    eb=errorbars!(top, dfs[!,:U], (dfs[!,Symbol("SDS_Mx_x_0π")] .+ dfs[!,Symbol("SDS_Mx_x_π0")]) /Ls^2, 
-        (dfs[!,Symbol("ΔSDS_Mx_x_0π")] .+ dfs[!,Symbol("ΔSDS_Mx_x_π0")]) /Ls^2 ; linewidth=er_lw, 
+    eb=errorbars!(top, dfs[!,:U], (dfs[!,Symbol("SDS_A1_Mx_x")] ) , 
+        (dfs[!,Symbol("ΔSDS_A1_Mx_x")] )  ; linewidth=er_lw, 
             whiskerwidth=10,color = colorschemes[:tab20][count])
     CairoMakie.translate!(eb, 0, 0, -0.5)
-    CairoMakie.scatterlines!(top, dfs[!,:U], (dfs[!,Symbol("SDS_Mx_x_0π")] .+ dfs[!,Symbol("SDS_Mx_x_π0")]) /Ls^2  ;  
+    CairoMakie.scatterlines!(top, dfs[!,:U], (dfs[!,Symbol("SDS_A1_Mx_x")])   ;  
         marker = :xcross, color = colorschemes[:tab20][count], 
         label = L"$():\;β=%$(1/Ts), L=%$(Ls) $", markersize=10)
 
-    eb=errorbars!(mid, dfs[!,:U], (dfs[!,Symbol("SDS_Mx_x_0π")] .+ dfs[!,Symbol("SDS_Mx_x_π0")]) /Ls^2 .-
+    eb=errorbars!(mid, dfs[!,:U], (dfs[!,Symbol("SDS_A1_Mx_x")] ) .-
         χspin_A1_XX_analytic.(dfs[!,:U], 1/Ts, 0.5*(μ0-(-μ0)), Ls), 
-        (dfs[!,Symbol("ΔSDS_Mx_x_0π")] .+ dfs[!,Symbol("ΔSDS_Mx_x_π0")]) /Ls^2 ; linewidth=er_lw, 
+        (dfs[!,Symbol("ΔSDS_A1_Mx_x")] )  ; linewidth=er_lw, 
             whiskerwidth=10,color = colorschemes[:tab20][count])
     CairoMakie.translate!(eb, 0, 0, -0.5)
-    CairoMakie.scatterlines!(mid, dfs[!,:U], (dfs[!,Symbol("SDS_Mx_x_0π")] .+ dfs[!,Symbol("SDS_Mx_x_π0")]) /Ls^2  .-
+    CairoMakie.scatterlines!(mid, dfs[!,:U], (dfs[!,Symbol("SDS_A1_Mx_x")] )   .-
         χspin_A1_XX_analytic.(dfs[!,:U], 1/Ts, 0.5*(μ0-(-μ0)), Ls);  
         marker = :xcross, color = colorschemes[:tab20][count], 
         label = L"$():\;β=%$(1/Ts), L=%$(Ls) $", markersize=10)
@@ -1426,10 +1426,7 @@ for (idx, (Ts, Ls)) in enumerate(zip(df_LT[:,:T],df_LT[:,:L]))
         marker =:xcross, markersize=1, linestyle=:dot, linewidth=2.5,
         color = colorschemes[:tab20][count], label = L"$(ana):\;β=%$(1/Ts), L=%$(Ls) $")
 
-        count+=2;
-        CairoMakie.scatterlines!(top, dfs[!,:U], dfs[!,Symbol("CDS_ππ")] /(Ls^2) ;  
-        marker = :xcross, color = colorschemes[:tab20][count], 
-        label = L"$(A_1^\prime):\;β=%$(1/Ts), L=%$(Ls) $", markersize=10)
+
 end
 end
 axislegend(top, position=(1, 1))

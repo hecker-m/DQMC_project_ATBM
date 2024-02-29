@@ -1,4 +1,28 @@
 """
+    extract_ϕ(mc::DQMC, _config::Int)
+
+Returns the recorded ϕ-configuration field from `mc` at the 
+recorded instance `_config`
+"""
+function extract_ϕ(mc::DQMC, _config::Int)
+    δτ=mc.parameters.delta_tau
+    my_field=mc.field
+
+    my_field_decompressed=MonteCarlo.decompress(my_field, 
+        mc.recorder.configs[_config])    #brings the bitstream into array form
+
+    if typeof(my_field) <: AbstractDiscreteMBF
+        #convert the values 1,..,4 into the corresponding x-values, 
+        # respectively, ϕ~x/sqrt(2U)    cf. field definition
+        ϕ_field=my_field.x[my_field_decompressed[:,:,:]]  
+        ϕ_field ./=sqrt(2δτ)  
+    else
+        ϕ_field=my_field_decompressed
+    end
+    return ϕ_field
+end
+
+"""
 get_observable_using_ϕ(_dqmcs::Array, key)
 
 Takes the recorded field configurations (ϕ), 
@@ -9,33 +33,14 @@ Mxϕ_ππ_bar * Mxϕ_ππ_bar
 """
 function get_observable_using_ϕ(_dqmcs::Array, value_Q)
     n_workers=length(_dqmcs)
-    values=FullBinner(Float64)
     Nϕ=_dqmcs[1].parameters.Nϕ
-    N=length(_dqmcs[1].model.l)
-    U=_dqmcs[1].model.U
-    Nτ=_dqmcs[1].parameters.slices
-    δτ=_dqmcs[1].parameters.delta_tau
-    β=_dqmcs[1].parameters.beta
 
     binner_array=make_binner_array(value_Q, Nϕ)
     for worker in 1:n_workers
-        my_field=_dqmcs[worker].field
         number_configs=length(_dqmcs[worker].recorder.configs)
 
         for config=1:number_configs
-
-            my_field_decompressed=MonteCarlo.decompress(my_field, 
-                _dqmcs[worker].recorder.configs[config])    #brings the bitstream into array form
-
-                if typeof(my_field) <: AbstractDiscreteMBF
-                    #convert the values 1,..,4 into the corresponding x-values, 
-                    # respectively, ϕ~x/sqrt(2U)    cf. field definition
-                    ϕ_field=my_field.x[my_field_decompressed[:,:,:]]  
-                    ϕ_field ./=sqrt(2δτ)  
-                else
-                    ϕ_field=my_field_decompressed
-                end
-
+            ϕ_field=extract_ϕ( _dqmcs[worker], config)
             calc_observables!(binner_array, _dqmcs[worker], ϕ_field, value_Q)          
         end
     end
@@ -48,7 +53,7 @@ For different ordering vectors, there is a different number of observables we ca
 `make_binner_array()` generates an array with the appropriate number of FullBinners.
 """
 make_binner_array(::Val{:Qππ}, Nϕ)=[FullBinner(Float64) for i=1:4]
-make_binner_array(::Val{:Q0πQπ0}, Nϕ)= Nϕ==1 ? [FullBinner(Float64) for i=1:(12+1)] : [FullBinner(Float64) for i=1:16]
+make_binner_array(::Val{:Q0πQπ0}, Nϕ)= Nϕ==1 ? [FullBinner(Float64) for i=1:(12+2)] : [FullBinner(Float64) for i=1:16]
 make_binner_array(::Val{:Q0πQπ0_offset}, Nϕ)= Nϕ==1 ? [FullBinner(Float64) for i=1:(12+3)] : [FullBinner(Float64) for i=1:16]
 
 
@@ -121,64 +126,68 @@ function calc_observables!(binner_array::Array, mc ::DQMC, ϕ_field::Array, ::Va
     ϕQ1Q2= calc_ϕQ1Q2(mc, ϕ_field)
     ΛA1=calc_ΛA1(mc, ϕ_field)
 
-    ϕQ1Q2_OP=Vector{Float64}(undef, Nτ)
-    ΦA1=Vector{Float64}(undef, Nτ)
-    ΦB1=Vector{Float64}(undef, Nτ)
-    ΦA1p=Vector{Float64}(undef, Nτ)
-    if Nϕ==2
-        ΦB1p=Array{Float64}(undef,1, Nτ)
-    elseif Nϕ==3
-        ΦB1p=Array{Float64}(undef,3, Nτ)
-    end
-    for ℓ=1:Nτ
-        ϕQ1Q2_OP[ℓ]=norm(ϕQ1Q2[:,ℓ])
-        ΦA1[ℓ]=sum(ϕQ1Q2[1:Nϕ,ℓ] .^2  +  ϕQ1Q2[Nϕ+1:2Nϕ,ℓ] .^2)/(2U)
-        ΦB1[ℓ]=sum(ϕQ1Q2[1:Nϕ,ℓ] .^2  -  ϕQ1Q2[Nϕ+1:2Nϕ,ℓ] .^2)/(2U)
-        ΦA1p[ℓ]=2*sum(ϕQ1Q2[1:Nϕ,ℓ] .*  ϕQ1Q2[Nϕ+1:2Nϕ,ℓ])/(2U)
-        if Nϕ==2
-            ΦB1p[1,ℓ]=2*(ϕQ1Q2[1,ℓ]*ϕQ1Q2[Nϕ+2,ℓ]-ϕQ1Q2[2,ℓ]*ϕQ1Q2[Nϕ+1,ℓ])/(2U)
-        elseif Nϕ==3
-            ΦB1p[1,ℓ]=2*(ϕQ1Q2[2,ℓ]*ϕQ1Q2[Nϕ+3,ℓ]-ϕQ1Q2[3,ℓ]*ϕQ1Q2[Nϕ+2,ℓ])/(2U)
-            ΦB1p[2,ℓ]=2*(ϕQ1Q2[3,ℓ]*ϕQ1Q2[Nϕ+1,ℓ]-ϕQ1Q2[1,ℓ]*ϕQ1Q2[Nϕ+3,ℓ])/(2U)
-            ΦB1p[3,ℓ]=2*(ϕQ1Q2[1,ℓ]*ϕQ1Q2[Nϕ+2,ℓ]-ϕQ1Q2[2,ℓ]*ϕQ1Q2[Nϕ+1,ℓ])/(2U)
-        end
-    end
+    ϕQ1Q2_OP=calc_ϕQ1Q2_OP(mc, ϕQ1Q2)
+    ΦA1=calc_ΦA1(mc, ϕQ1Q2)
+    ΦB1=calc_ΦB1(mc, ϕQ1Q2)
+    ΦA1p=calc_ΦA1p(mc, ϕQ1Q2)
+    ΦB1p=calc_ΦB1p(mc, ϕQ1Q2)
+
     ϕQ1Q2_bar=Vector{Float64}(undef, 2Nϕ)
     for ζ=1:2Nϕ
         ϕQ1Q2_bar[ζ]=mean(ϕQ1Q2[ζ,:])
     end
+
+    S_spin=mean(ΦA1) -Nϕ/(N*U*δτ);
+    S2_spin=mean(ΦA1 .^2)  - 2*(1+Nϕ)/(N*U*δτ) * mean(ΦA1) + Nϕ*(1+Nϕ)/(δτ^2*N^2 *U^2);
+    χ_spin=1/(2U) *(β* sum(ϕQ1Q2_bar .^2) - 2Nϕ /(N));
+
     ## #1 is the magnetic order parameter ⟨ |̄ϕ| ⟩ /sqrt(2U)
     push!(binner_array[1], mean(ϕQ1Q2_OP)/sqrt(2U))
     ## #2 is the magnetic structure factor S_spin = ΦA1(0) -Nϕ /(N*U*δτ)   =(1/(2U)) *∑_ζ ⟨(1/Nτ)∑_ℓ ϕ²(ℓ) -1/(N*δτ)⟩
-    push!(binner_array[2], mean(ΦA1) -Nϕ/(N*U*δτ) )
+    push!(binner_array[2], S_spin )
     ## #3 is the magnetic susceptibility (1/(2U)) *∑_ζ ⟨β  ̄ϕ²  -1/(N)⟩
-    push!(binner_array[3], 1/(2U) *(β* sum(ϕQ1Q2_bar .^2) - 2Nϕ /(N)))
+    push!(binner_array[3], χ_spin)
     ## #4 for the Binder cumulant, we also need S_spin^{(2)} = … = ⟨ [ϕ(0)⋅ϕ(0)]² ⟩ = ⟨ ΦA1² ⟩
-    push!(binner_array[4], mean(ΦA1 .^2)  - 2*(1+Nϕ)/(N*U*δτ) * mean(ΦA1) + Nϕ*(1+Nϕ)/(δτ^2*N^2 *U^2))
+    push!(binner_array[4], S2_spin)
+
+    S_bil_B1=mean(ΦB1 .^2) - 2/(N*U*δτ) * mean(ΦA1) + Nϕ/(δτ^2*N^2 *U^2);
+    S2_bil_B1=mean(ΦB1 .^4)  -12/(N* δτ *U ) *mean(ΦB1 .* ΦB1 .* ΦA1) +
+        6*(Nϕ +4 )/(N^2* δτ^2 *U^2 ) *mean(ΦB1 .* ΦB1) + 12/(N^2* δτ^2 *U^2 ) *mean(ΦA1 .* ΦA1) -
+        12*(Nϕ +2 )/(N^3* δτ^3 *U^3 ) *mean(ΦA1) + 3Nϕ*(Nϕ +2 )/(N^4* δτ^4 *U^4 );
+    χ_bil_B1=β*mean(ΦB1)^2 - 2/(N*U) * mean(ΦA1) + Nϕ/(δτ*N^2 *U^2);
 
     ## #5 is the nematic order parameter ⟨ |ΦB1| ⟩
     push!(binner_array[5], mean(abs.(ΦB1)))    
     ## #6 is the nematic structure factor S_{nem}^{B₁} = …  = ⟨ ΦB1²(0) ⟩
-    push!(binner_array[6], mean(ΦB1 .^2) - 2/(N*U*δτ) * mean(ΦA1) + Nϕ/(δτ^2*N^2 *U^2))
+    push!(binner_array[6], S_bil_B1)
     ## #7 is the nematic susceptibility β*1/(Nτ²)∑_{ℓ,ℓ′} ⟨ ΦB1(ℓ) ΦB1(ℓ′)⟩  ± …
-    push!(binner_array[7], β*mean(ΦB1)^2 - 2/(N*U) * mean(ΦA1) + Nϕ/(δτ*N^2 *U^2))    
+    push!(binner_array[7], χ_bil_B1)    
     ## #8 for the Binder cumulant, we also need  S_{nem}^{(2),B₁} = …  = ⟨ ΦB1⁴ ⟩
-    push!(binner_array[8], mean(ΦB1 .^4)  -12/(N* δτ *U ) *mean(ΦB1 .* ΦB1 .* ΦA1) +
-        6*(Nϕ +4 )/(N^2* δτ^2 *U^2 ) *mean(ΦB1 .* ΦB1) + 12/(N^2* δτ^2 *U^2 ) *mean(ΦA1 .* ΦA1) -
-        12*(Nϕ +2 )/(N^3* δτ^3 *U^3 ) *mean(ΦA1) + 3Nϕ*(Nϕ +2 )/(N^4* δτ^4 *U^4 ))
+    push!(binner_array[8], S2_bil_B1)
+  
+    S_bil_A1p=mean(ΦA1p .^2) - 2/(N*U*δτ) * mean(ΦA1) + Nϕ/(δτ^2*N^2 *U^2);
+    S2_bil_A1p=mean(ΦA1p .^4)  -12/(N* δτ *U ) *mean(ΦA1p .* ΦA1p .* ΦA1) +
+        6*(Nϕ +4 )/(N^2* δτ^2 *U^2 ) *mean(ΦA1p .* ΦA1p) + 12/(N^2* δτ^2 *U^2 ) *mean(ΦA1 .* ΦA1) -
+        12*(Nϕ +2 )/(N^3* δτ^3 *U^3 ) *mean(ΦA1) + 3Nϕ*(Nϕ +2 )/(N^4* δτ^4 *U^4 );
+    χ_bil_A1p=β*mean(ΦA1p)^2 - 2/(N*U) * mean(ΦA1) + Nϕ/(δτ*N^2 *U^2);
 
     ## #9 is the A1′ bilinear order parameter ⟨ |ΦA1′| ⟩
     push!(binner_array[9], mean(abs.(ΦA1p)))    
     ## #10 is the A1′ bilinear structure factor ⟨ (ΦA1′)²(0) ⟩
-    push!(binner_array[10], mean(ΦA1p .^2) - 2/(N*U*δτ) * mean(ΦA1) + Nϕ/(δτ^2*N^2 *U^2))
+    push!(binner_array[10], S_bil_A1p)
     ## #11 is the A1′ bilinear susceptibility 1/(Nτ²)∑_{ℓ,ℓ′} ⟨ ΦA1′(ℓ) ΦA1′(ℓ′)⟩  ± …
-    push!(binner_array[11], β*mean(ΦA1p)^2 - 2/(N*U) * mean(ΦA1) + Nϕ/(δτ*N^2 *U^2)) 
+    push!(binner_array[11], χ_bil_A1p) 
     ## #12 for the Binder cumulant, we also need  ⟨ (ΦA1′)⁴ ⟩
-    push!(binner_array[12], mean(ΦA1p .^4)  -12/(N* δτ *U ) *mean(ΦA1p .* ΦA1p .* ΦA1) +
-        6*(Nϕ +4 )/(N^2* δτ^2 *U^2 ) *mean(ΦA1p .* ΦA1p) + 12/(N^2* δτ^2 *U^2 ) *mean(ΦA1 .* ΦA1) -
-        12*(Nϕ +2 )/(N^3* δτ^3 *U^3 ) *mean(ΦA1) + 3Nϕ*(Nϕ +2 )/(N^4* δτ^4 *U^4 ))
+    push!(binner_array[12], S2_bil_A1p)
 
-    push!(binner_array[13], U^2 * (mean(ΛA1 .^2) - (Nϕ+2/N)/(δτ*U) * mean(ΛA1) + Nϕ*(Nϕ+2/N)/(4*δτ^2 *U^2))) 
+ 
+    #h4 binner [13] and h4_OnSite binner [14] 
+    h4=U^2 * (mean(ΛA1 .^2) - (Nϕ+2/N)/(δτ*U) * mean(ΛA1) + Nϕ*(Nϕ+2/N)/(4*δτ^2 *U^2));
+    push!(binner_array[13], h4) 
+    ## #14 is the interaction energy 
+    E_pot=-U * (mean(ΛA1) - 1/(2*δτ*U));
+    push!(binner_array[14], E_pot) 
+
 
     if Nϕ>1
         DA1_ΦB1p=Vector{Float64}(undef, Nτ)
@@ -213,68 +222,65 @@ function calc_observables!(binner_array::Array, mc ::DQMC, ϕ_field::Array, ::Va
     ΛA1=calc_ΛA1(mc, ϕ_field)
     Ω4A1=calc_ΩnA1(mc, ϕ_field,4)
 
-    ϕQ1Q2_OP=Vector{Float64}(undef, Nτ)
-    ΦA1=Vector{Float64}(undef, Nτ)
-    ΦB1=Vector{Float64}(undef, Nτ)
-    ΦA1p=Vector{Float64}(undef, Nτ)
-    if Nϕ==2
-        ΦB1p=Array{Float64}(undef,1, Nτ)
-    elseif Nϕ==3
-        ΦB1p=Array{Float64}(undef,3, Nτ)
-    end
-    for ℓ=1:Nτ
-        ϕQ1Q2_OP[ℓ]=norm(ϕQ1Q2[:,ℓ])
-        ΦA1[ℓ]=sum(ϕQ1Q2[1:Nϕ,ℓ] .^2  +  ϕQ1Q2[Nϕ+1:2Nϕ,ℓ] .^2)/(2U)
-        ΦB1[ℓ]=sum(ϕQ1Q2[1:Nϕ,ℓ] .^2  -  ϕQ1Q2[Nϕ+1:2Nϕ,ℓ] .^2)/(2U)
-        ΦA1p[ℓ]=2*sum(ϕQ1Q2[1:Nϕ,ℓ] .*  ϕQ1Q2[Nϕ+1:2Nϕ,ℓ])/(2U)
-        if Nϕ==2
-            ΦB1p[1,ℓ]=2*(ϕQ1Q2[1,ℓ]*ϕQ1Q2[Nϕ+2,ℓ]-ϕQ1Q2[2,ℓ]*ϕQ1Q2[Nϕ+1,ℓ])/(2U)
-        elseif Nϕ==3
-            ΦB1p[1,ℓ]=2*(ϕQ1Q2[2,ℓ]*ϕQ1Q2[Nϕ+3,ℓ]-ϕQ1Q2[3,ℓ]*ϕQ1Q2[Nϕ+2,ℓ])/(2U)
-            ΦB1p[2,ℓ]=2*(ϕQ1Q2[3,ℓ]*ϕQ1Q2[Nϕ+1,ℓ]-ϕQ1Q2[1,ℓ]*ϕQ1Q2[Nϕ+3,ℓ])/(2U)
-            ΦB1p[3,ℓ]=2*(ϕQ1Q2[1,ℓ]*ϕQ1Q2[Nϕ+2,ℓ]-ϕQ1Q2[2,ℓ]*ϕQ1Q2[Nϕ+1,ℓ])/(2U)
-        end
-    end
-    ϕQ1Q2_bar=Vector{Float64}(undef, 2Nϕ)
-    for ζ=1:2Nϕ
-        ϕQ1Q2_bar[ζ]=mean(ϕQ1Q2[ζ,:])
-    end
+    ϕQ1Q2_OP=calc_ϕQ1Q2_OP(mc, ϕQ1Q2)
+    ΦA1=calc_ΦA1(mc, ϕQ1Q2)
+    ΦB1=calc_ΦB1(mc, ϕQ1Q2)
+    ΦA1p=calc_ΦA1p(mc, ϕQ1Q2)
+    ΦB1p=calc_ΦB1p(mc, ϕQ1Q2)
+
+    ϕQ1Q2_bar=calc_ϕQ1Q2_bar(mc, ϕQ1Q2)
+
+    S_spin=mean(ΦA1) -Nϕ/(N*U*δτ);
+    S2_spin=mean(ΦA1 .^2)  - 2*(1+Nϕ)/(N*U*δτ) * mean(ΦA1) + Nϕ*(1+Nϕ)/(δτ^2*N^2 *U^2);
+    χ_spin=1/(2U) *(β* sum(ϕQ1Q2_bar .^2) - 2Nϕ /(N));
+
     ## #1 is the magnetic order parameter ⟨ |̄ϕ| ⟩ /sqrt(2U)
     push!(binner_array[1], mean(ϕQ1Q2_OP)/sqrt(2U))
     ## #2 is the magnetic structure factor S_spin = ΦA1(0) -Nϕ /(N*U*δτ)   =(1/(2U)) *∑_ζ ⟨(1/Nτ)∑_ℓ ϕ²(ℓ) -1/(N*δτ)⟩
-    push!(binner_array[2], mean(ΦA1) -Nϕ/(N*U*δτ) )
+    push!(binner_array[2], S_spin )
     ## #3 is the magnetic susceptibility (1/(2U)) *∑_ζ ⟨β  ̄ϕ²  -1/(N)⟩
-    push!(binner_array[3], 1/(2U) *(β* sum(ϕQ1Q2_bar .^2) - 2Nϕ /(N)))
+    push!(binner_array[3], χ_spin)
     ## #4 for the Binder cumulant, we also need S_spin^{(2)} = … = ⟨ [ϕ(0)⋅ϕ(0)]² ⟩ = ⟨ ΦA1² ⟩
-    push!(binner_array[4], mean(ΦA1 .^2)  - 2*(1+Nϕ)/(N*U*δτ) * mean(ΦA1) + Nϕ*(1+Nϕ)/(δτ^2*N^2 *U^2))
+    push!(binner_array[4], S2_spin)
+
+    S_bil_B1=mean(ΦB1 .^2) - 2/(N*U*δτ) * mean(ΦA1) + Nϕ/(δτ^2*N^2 *U^2);
+    S2_bil_B1=mean(ΦB1 .^4)  -12/(N* δτ *U ) *mean(ΦB1 .* ΦB1 .* ΦA1) +
+        6*(Nϕ +4 )/(N^2* δτ^2 *U^2 ) *mean(ΦB1 .* ΦB1) + 12/(N^2* δτ^2 *U^2 ) *mean(ΦA1 .* ΦA1) -
+        12*(Nϕ +2 )/(N^3* δτ^3 *U^3 ) *mean(ΦA1) + 3Nϕ*(Nϕ +2 )/(N^4* δτ^4 *U^4 );
+    χ_bil_B1=β*mean(ΦB1)^2 - 2/(N*U) * mean(ΦA1) + Nϕ/(δτ*N^2 *U^2);
 
     ## #5 is the nematic order parameter ⟨ |ΦB1| ⟩
     push!(binner_array[5], mean(abs.(ΦB1)))    
     ## #6 is the nematic structure factor S_{nem}^{B₁} = …  = ⟨ ΦB1²(0) ⟩
-    push!(binner_array[6], mean(ΦB1 .^2) - 2/(N*U*δτ) * mean(ΦA1) + Nϕ/(δτ^2*N^2 *U^2))
+    push!(binner_array[6], S_bil_B1)
     ## #7 is the nematic susceptibility β*1/(Nτ²)∑_{ℓ,ℓ′} ⟨ ΦB1(ℓ) ΦB1(ℓ′)⟩  ± …
-    push!(binner_array[7], β*mean(ΦB1)^2 - 2/(N*U) * mean(ΦA1) + Nϕ/(δτ*N^2 *U^2))    
+    push!(binner_array[7], χ_bil_B1)    
     ## #8 for the Binder cumulant, we also need  S_{nem}^{(2),B₁} = …  = ⟨ ΦB1⁴ ⟩
-    push!(binner_array[8], mean(ΦB1 .^4)  -12/(N* δτ *U ) *mean(ΦB1 .* ΦB1 .* ΦA1) +
-        6*(Nϕ +4 )/(N^2* δτ^2 *U^2 ) *mean(ΦB1 .* ΦB1) + 12/(N^2* δτ^2 *U^2 ) *mean(ΦA1 .* ΦA1) -
-        12*(Nϕ +2 )/(N^3* δτ^3 *U^3 ) *mean(ΦA1) + 3Nϕ*(Nϕ +2 )/(N^4* δτ^4 *U^4 ))
+    push!(binner_array[8], S2_bil_B1)
+
+    S_bil_A1p=mean(ΦA1p .^2) - 2/(N*U*δτ) * mean(ΦA1) + Nϕ/(δτ^2*N^2 *U^2);
+    S2_bil_A1p=mean(ΦA1p .^4)  -12/(N* δτ *U ) *mean(ΦA1p .* ΦA1p .* ΦA1) +
+        6*(Nϕ +4 )/(N^2* δτ^2 *U^2 ) *mean(ΦA1p .* ΦA1p) + 12/(N^2* δτ^2 *U^2 ) *mean(ΦA1 .* ΦA1) -
+        12*(Nϕ +2 )/(N^3* δτ^3 *U^3 ) *mean(ΦA1) + 3Nϕ*(Nϕ +2 )/(N^4* δτ^4 *U^4 );
+    χ_bil_A1p=β*mean(ΦA1p)^2 - 2/(N*U) * mean(ΦA1) + Nϕ/(δτ*N^2 *U^2);
 
     ## #9 is the A1′ bilinear order parameter ⟨ |ΦA1′| ⟩
     push!(binner_array[9], mean(abs.(ΦA1p)))    
     ## #10 is the A1′ bilinear structure factor ⟨ (ΦA1′)²(0) ⟩
-    push!(binner_array[10], mean(ΦA1p .^2) - 2/(N*U*δτ) * mean(ΦA1) + Nϕ/(δτ^2*N^2 *U^2))
+    push!(binner_array[10], S_bil_A1p)
     ## #11 is the A1′ bilinear susceptibility 1/(Nτ²)∑_{ℓ,ℓ′} ⟨ ΦA1′(ℓ) ΦA1′(ℓ′)⟩  ± …
-    push!(binner_array[11], β*mean(ΦA1p)^2 - 2/(N*U) * mean(ΦA1) + Nϕ/(δτ*N^2 *U^2)) 
+    push!(binner_array[11], χ_bil_A1p) 
     ## #12 for the Binder cumulant, we also need  ⟨ (ΦA1′)⁴ ⟩
-    push!(binner_array[12], mean(ΦA1p .^4)  -12/(N* δτ *U ) *mean(ΦA1p .* ΦA1p .* ΦA1) +
-        6*(Nϕ +4 )/(N^2* δτ^2 *U^2 ) *mean(ΦA1p .* ΦA1p) + 12/(N^2* δτ^2 *U^2 ) *mean(ΦA1 .* ΦA1) -
-        12*(Nϕ +2 )/(N^3* δτ^3 *U^3 ) *mean(ΦA1) + 3Nϕ*(Nϕ +2 )/(N^4* δτ^4 *U^4 ))
+    push!(binner_array[12], S2_bil_A1p)
 
     #h4 binner [13] and h4_OnSite binner [14] 
-    push!(binner_array[13], U^2 * (mean(ΛA1 .^2) - (Nϕ+2/N)/(δτ*U) * mean(ΛA1) + Nϕ*(Nϕ+2/N)/(4*δτ^2 *U^2))) 
-    push!(binner_array[14], U^2/N * (mean(Ω4A1) - 3/(δτ*U) * mean(ΛA1) +  3/(4*δτ^2 *U^2))) 
+    h4=U^2 * (mean(ΛA1 .^2) - (Nϕ+2/N)/(δτ*U) * mean(ΛA1) + Nϕ*(Nϕ+2/N)/(4*δτ^2 *U^2));
+    h4_OS=U^2/N * (mean(Ω4A1) - 3/(δτ*U) * mean(ΛA1) +  3/(4*δτ^2 *U^2));
+    push!(binner_array[13], h4) 
+    push!(binner_array[14], h4_OS) 
     ## #15 is the interaction energy 
-    push!(binner_array[15], -U * (mean(ΛA1) - 1/(2*δτ*U))) 
+    E_pot=-U * (mean(ΛA1) - 1/(2*δτ*U));
+    push!(binner_array[15], E_pot) 
 
     if Nϕ>1
         DA1_ΦB1p=Vector{Float64}(undef, Nτ)
@@ -297,33 +303,7 @@ end
 
 
 
-@inline function calc_ΛA1(mc ::DQMC, ϕ_field::Array)
-    lat=mc.model.l
-    N=length(lat)
-    U=mc.model.U
-    Nτ=mc.parameters.slices
-    ΛA1= zeros(Float64, Nτ)
-    for slice in 1:Nτ    
-        @inbounds @fastmath for i in eachindex(lat)
-            ΛA1[slice] +=  sum(ϕ_field[: ,i ,slice] .^2)
-        end
-    end
-    return ΛA1 ./(2U*N)
-end
 
-@inline function calc_ΩnA1(mc ::DQMC, ϕ_field::Array, n::Int)
-    lat=mc.model.l
-    N=length(lat)
-    U=mc.model.U
-    Nτ=mc.parameters.slices
-    ΩA1= zeros(Float64, Nτ)
-    for slice in 1:Nτ    
-        @inbounds @fastmath for i in eachindex(lat)
-            ΩA1[slice] +=  sum(ϕ_field[: ,i ,slice] .^n)
-        end
-    end
-    return ΩA1 ./((2U)^(n/2)*N)
-end
 
 """
 `calc_ϕQ1Q2(mc ::DQMC, ϕ_field::Array)` computes the Fourier transform 
@@ -398,6 +378,114 @@ end
     end
     return ϕQ3 ./N
 end
+
+@inline function calc_ΛA1(mc ::DQMC, ϕ_field::Array)
+    lat=mc.model.l
+    N=length(lat)
+    U=mc.model.U
+    Nτ=mc.parameters.slices
+    ΛA1= zeros(Float64, Nτ)
+    for slice in 1:Nτ    
+        @inbounds @fastmath for i in eachindex(lat)
+            ΛA1[slice] +=  sum(ϕ_field[: ,i ,slice] .^2)
+        end
+    end
+    return ΛA1 ./(2U*N)
+end
+
+@inline function calc_ΩnA1(mc ::DQMC, ϕ_field::Array, n::Int)
+    lat=mc.model.l
+    N=length(lat)
+    U=mc.model.U
+    Nτ=mc.parameters.slices
+    ΩA1= zeros(Float64, Nτ)
+    for slice in 1:Nτ    
+        @inbounds @fastmath for i in eachindex(lat)
+            ΩA1[slice] +=  sum(ϕ_field[: ,i ,slice] .^n)
+        end
+    end
+    return ΩA1 ./((2U)^(n/2)*N)
+end
+
+####################
+### bilinears of ϕ=(ϕ_Q₁, ϕ_Q₂)
+####################
+@inline function calc_ϕQ1Q2_OP(mc ::DQMC, ϕQ1Q2::Array)
+    Nτ=mc.parameters.slices
+    ϕQ1Q2_OP=Vector{Float64}(undef, Nτ)
+    for ℓ=1:Nτ
+        ϕQ1Q2_OP[ℓ]=norm(ϕQ1Q2[:,ℓ])
+    end
+    return ϕQ1Q2_OP
+end
+@inline function calc_ϕQ1Q2_bar(mc ::DQMC, ϕQ1Q2::Array)
+    Nϕ=mc.parameters.Nϕ
+    ϕQ1Q2_bar=Vector{Float64}(undef, 2Nϕ)
+    for ζ=1:2Nϕ
+        ϕQ1Q2_bar[ζ]=mean(ϕQ1Q2[ζ,:])
+    end
+    return ϕQ1Q2_bar
+end
+
+@inline function calc_ΦA1(mc ::DQMC, ϕQ1Q2::Array)
+    Nϕ=mc.parameters.Nϕ
+    U=mc.model.U
+    Nτ=mc.parameters.slices
+    ΦA1=Vector{Float64}(undef, Nτ)
+    for ℓ=1:Nτ
+        ΦA1[ℓ]=sum(ϕQ1Q2[1:Nϕ,ℓ] .^2  +  ϕQ1Q2[Nϕ+1:2Nϕ,ℓ] .^2)/(2U)
+    end
+    return ΦA1
+end
+@inline function calc_ΦB1(mc ::DQMC, ϕQ1Q2::Array)
+    Nϕ=mc.parameters.Nϕ
+    U=mc.model.U
+    Nτ=mc.parameters.slices
+    ΦB1=Vector{Float64}(undef, Nτ)
+    for ℓ=1:Nτ
+        ΦB1[ℓ]=sum(ϕQ1Q2[1:Nϕ,ℓ] .^2  -  ϕQ1Q2[Nϕ+1:2Nϕ,ℓ] .^2)/(2U)
+    end
+    return ΦB1
+end
+@inline function calc_ΦA1p(mc ::DQMC, ϕQ1Q2::Array)
+    Nϕ=mc.parameters.Nϕ
+    U=mc.model.U
+    Nτ=mc.parameters.slices
+    ΦA1p=Vector{Float64}(undef, Nτ)
+    for ℓ=1:Nτ
+        ΦA1p[ℓ]=2*sum(ϕQ1Q2[1:Nϕ,ℓ] .*  ϕQ1Q2[Nϕ+1:2Nϕ,ℓ])/(2U)
+    end
+    return ΦA1p
+end
+@inline function calc_ΦB1p(mc ::DQMC, ϕQ1Q2::Array)
+    Nϕ=mc.parameters.Nϕ
+    U=mc.model.U
+    Nτ=mc.parameters.slices
+    if Nϕ==1
+        # println("Φ_B1` cannot be computed from ϕ for Nϕ=$(Nϕ)")
+        return nothing
+    end
+    if Nϕ==2
+        ΦB1p=Array{Float64}(undef,1, Nτ)
+    elseif Nϕ==3
+        ΦB1p=Array{Float64}(undef,3, Nτ)
+    end
+
+    for ℓ=1:Nτ
+        if Nϕ==2
+            ΦB1p[1,ℓ]=2*(ϕQ1Q2[1,ℓ]*ϕQ1Q2[Nϕ+2,ℓ]-ϕQ1Q2[2,ℓ]*ϕQ1Q2[Nϕ+1,ℓ])/(2U)
+        elseif Nϕ==3
+            ΦB1p[1,ℓ]=2*(ϕQ1Q2[2,ℓ]*ϕQ1Q2[Nϕ+3,ℓ]-ϕQ1Q2[3,ℓ]*ϕQ1Q2[Nϕ+2,ℓ])/(2U)
+            ΦB1p[2,ℓ]=2*(ϕQ1Q2[3,ℓ]*ϕQ1Q2[Nϕ+1,ℓ]-ϕQ1Q2[1,ℓ]*ϕQ1Q2[Nϕ+3,ℓ])/(2U)
+            ΦB1p[3,ℓ]=2*(ϕQ1Q2[1,ℓ]*ϕQ1Q2[Nϕ+2,ℓ]-ϕQ1Q2[2,ℓ]*ϕQ1Q2[Nϕ+1,ℓ])/(2U)
+        end
+    end
+    return ΦB1p
+end
+
+######################################################
+#### older functions
+######################################################
 """
 Calculates ̄M^(xϕ)[Q=(π,π)], directly returning the scalar value
 """

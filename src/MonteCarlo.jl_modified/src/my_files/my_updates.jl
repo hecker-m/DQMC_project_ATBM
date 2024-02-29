@@ -136,11 +136,11 @@ end
 
     shuffle!(u.indices)
     if isodd(div(u.count, 3))   #trying three times x, then 3 times y, etc.
-        
             for  row in u.indices[1:Lshifted]
+                x_dir=rand([2, L])            #chooses between [+a1 (2) ,-a1 (L)]
                 for ix in 1:L
                     src=ix+(row-1)*L
-                    trg=Bsrcdir2trg[src,2] # dir=2 is a shift tx=a*ex
+                    trg=Bsrcdir2trg[src, x_dir] # dir=2 is a shift tx=a*ex
                     for slice in 1:nslices(mc)
                         c[:, trg, slice] .= tc[:, src, slice]
                     end
@@ -148,9 +148,10 @@ end
             end
     else
         for  column in u.indices[1:Lshifted]
+            y_dir=rand([L+1, 1+L*L-L])            #chooses between [+a2 ,-a2]
             for iy in 1:L
                 src=column+(iy-1)*L
-                trg=Bsrcdir2trg[src, L+1] # dir=L+1 is a shift ty=a*ey
+                trg=Bsrcdir2trg[src, y_dir] # dir=L+1 is a shift ty=a*ey
                 for slice in 1:nslices(mc)
                     c[:, trg, slice] .= tc[:, src, slice]
                 end

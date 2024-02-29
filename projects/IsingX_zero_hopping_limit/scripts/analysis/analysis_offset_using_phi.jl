@@ -11,13 +11,13 @@ L0=8;
 δτ=0.05;
 #Us=[0.2,0.4, 0.6, 0.8, 0.9, 1.0, 1.1, 1.3, 1.6,1.8, 2.0, 2.4,2.8]
 Us=[0.2,0.4, 0.6, 0.8, 0.9, 1.0, 1.1, 1.3, 1.6,1.8, 2.0, 2.2, 2.4,2.6, 2.8]
-βs=[10, ]
+βs=[1, ]
 paras=[(L=L0, β=β0, U=U0, Pe=true) for U0 in Us, β0 in βs][:]
 
 #######
 # to save the computed dataframe
 #######
-save_bool=true;
+save_bool=false;
 save_path="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/DQMC_project_ATBM/projects/IsingX_zero_hopping_limit/figures/dataframes/"
 my_ϵ="_eps_0pc"
 save_name="Disc8_L$(L0)" * my_ϵ * "_dt_" * to_string(δτ)

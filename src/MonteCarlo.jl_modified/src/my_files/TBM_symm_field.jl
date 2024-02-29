@@ -53,6 +53,19 @@ end
 end
 
 @inline function propose_local(mc::DQMC, model::Model, 
+    f::Union{Discrete_8_MBF1_X_symm, Discrete_12_MBF1_X_symm, Discrete_16_MBF1_X_symm}, i::Int, slice::Int)
+
+    k=size(f.choices)[2]
+
+    η_old = f.conf[1,i, slice]
+    f.temp_vec[:]=@inbounds [f.choices[η_old, rand(1:k)]]
+
+    detratio = calculate_detratio!(mc, model , i, f.temp_vec)
+    return abs2(detratio) * f.w[f.temp_vec[1]]/f.w[η_old] *
+        f.T0[f.temp_vec[1], η_old]/f.T0[η_old, f.temp_vec[1]], 0.0, f.temp_vec
+end
+
+@inline function propose_local(mc::DQMC, model::Model, 
     f::Discrete_MBF2_symm, i::Int, slice::Int)
 
     rand1=rand(1:15)

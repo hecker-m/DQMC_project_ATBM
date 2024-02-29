@@ -1,4 +1,4 @@
-# include("../../../../src/MonteCarlo.jl_modified/src/MonteCarlo2.jl")
+include("../../../../src/MonteCarlo.jl_modified/src/MonteCarlo2.jl")
 using .MonteCarlo
 using Distributions, DataFrames, JLD2, Dates, Plots, LinearAlgebra, CSV
 include("../../../../src/Analysis_Fcns/analysis_fcns.jl")
@@ -14,8 +14,8 @@ L0=8;
 Us=[2.6, ]
 #βs=[1, 2, 2.25, 2.5, 2.75, 3, 3.5, 4, 4.5, 5, 5.5, 6,  10]
 #Us=[0.2,0.4, 0.6, 0.8, 0.9, 1.0, 1.1, 1.3, 1.6,1.8, 2.0, 2.4,2.8]
-# Us=[0.2,0.4, 0.6, 0.8, 0.9, 1.0, 1.1, 1.3, 1.6,1.8, 2.0, 2.2, 2.4,2.6, 2.8]
-βs=[10, ]
+Us=[0.2,0.4, 0.6, 0.8, 0.9, 1.0, 1.1, 1.3, 1.6,1.8, 2.0, 2.2, 2.4,2.6, 2.8]
+βs=[1, ]
 paras=[(L=L0, β=β0, U=U0, Pe=true) for U0 in Us, β0 in βs][:]
 
 #######
@@ -38,6 +38,7 @@ my_keys=[(key=:CDS, q=(0,0)),
     (key=:CDS, q=float.((0,π))), (key=:CDSxx, q=(0,0)), (key=:CDSxx, q=float.((π,0))),
     (key=:NemC_X, ), (key=:NemS_X, ), (key=:B1_CDS, q=(0,0)), (key=:B1_CDC, q=(0,0)),
     (key=:A1p_dQ_C_X, ), (key=:A1p_dQ_S_X, ),
+    (key=:SDS_A1_Mx_x, ), (key=:SDC_A1_Mx_x, ),
     (key=:SDS_Mx_x, q=(0,0)), (key=:SDS_Mx_x, q=float.((π,π))),
     (key=:SDS_Mx_x, q=float.((π,0))), (key=:SDS_Mx_x, q=float.((0,π))),
     (key=:SDC_Mx_x, q=float.((π,0))), (key=:SDC_Mx_x, q=float.((0,π))),
@@ -137,7 +138,9 @@ for _para in eachindex(paras)
     n_workers != Nworker ? println("Only $(n_workers) finished for parameters $(_para) !!!!") : nothing ;
     println("loaded set $(_para)")
     global mc_inst=dqmcs[1]     #For later coding, it helps to have one `mc` instance to work with
-    global dqmcs_inst=dqmcs
+    if β==10 && U==2.4
+        global dqmcs_inst=dqmcs
+    end
 
     ############
     ## Computing the mean and std_errors of all observables 

@@ -123,6 +123,8 @@ function _load(dqmcs::Array, L::Int, T::Real, beta::Real, U::Real, peierls::Bool
             mc=my_load(data["MC"], Val(:DQMC); kwargs...)
             push!(dqmcs, mc);
             n_workers+=1;
+        else
+            println(filename * "   not found!")
         end
     end  
     return n_workers

@@ -86,13 +86,62 @@ end
 end
 
 
+###########################
+###########################
+### magnetic susceptibility Iterators
+###########################
+###########################
+
+###########################
+### lattice iterator for A1 magnetic susceptibility
+###########################
+"""
+    EachSitePair_A1()
 
 
+"""
+struct EachSitePair_A1 <: DirectLatticeIterator end
+EachSitePair_A1(::MonteCarloFlavor) = EachSitePair_A1()
+output_size(::EachSitePair_A1, l::Lattice) = (1, )
+
+_length(::EachSitePair_A1, l::Lattice) = 1
+
+function apply!(
+    temp::Array, iter::EachSitePair_A1, measurement, mc::DQMC, 
+    packed_greens, weight = 1.0
+    )
+    @timeit_debug "apply!(::EachSitePair_A1, ::$(typeof(measurement.kernel)))" begin
+        lat = lattice(mc)
+        L= lat.Ls[1]
+        @inbounds @fastmath for ix in 1:L, iy in 1:L
+            i=ix+(iy-1)*L
+            for jx in 1:L, jy in 1:L
+                if iseven(ix+jx+iy+jy)
+                j=jx+(jy-1)*L
+                temp[1] += weight *((-1)^(ix+jx)+(-1)^(iy+jy)) * 
+                    measurement.kernel(mc, mc.model, (i, j), packed_greens, 4)
+                end
+            end
+        end
+
+    end
+    return 
+end
 
 
-#######################
+@inline function finalize_temp!(::EachSitePair_A1, m, mc)
+    m.temp ./= (length(lattice(mc))^2)  # *1/N^2
+end
+@inline function commit!(::EachSitePair_A1, m) 
+    push!(m.observable, m.temp[1])
+end
+
+
+###########################
+###########################
 #### Bilinear susceptibility Iterators
-#########################
+###########################
+###########################
 
 
 ###########################
