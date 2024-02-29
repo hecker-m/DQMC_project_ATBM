@@ -32,8 +32,10 @@ src/tests/*
 projects/IsingX_Neel/figures/older_figures/*
 projects/IsingX_Neel/figures/dataframes/*
 
-projects/IsingX_Striped/figures/older_figures/*
-projects/IsingX_Striped/figures/dataframes/*
+projects/IsingX_Striped_c/figures/older_figures/*
+projects/IsingX_Striped_c/figures/dataframes/*
+projects/IsingX_Striped_c/figures/Disc4/*
+
 
 projects/IsingX_Striped_d/*
 projects/IsingX_Striped_d/materials/*
@@ -42,6 +44,7 @@ projects/IsingX_Striped_c2d/*
 
 projects/IsingX_zero_hopping_limit/materials/*
 projects/IsingX_zero_hopping_limit/figures/dataframes/*
+projects/IsingX_zero_hopping_limit/figures/older_figures/*
 
 projects/Heisenberg_Striped/figures/older_figures/*
 projects/Heisenberg_Striped/figures/dataframes/*
