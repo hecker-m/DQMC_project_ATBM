@@ -7,7 +7,8 @@ p_input="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/DQMC_project_ATBM/proj
 # p=p_output
 
 fig_path="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/DQMC_project_ATBM/projects/" * 
-        "IsingX_Striped_c/figures/Disc8/"
+    "IsingX_Striped_c/figures/Disc8/"
+;
 
 L_plot=8;
 μ0_plot=1.0;

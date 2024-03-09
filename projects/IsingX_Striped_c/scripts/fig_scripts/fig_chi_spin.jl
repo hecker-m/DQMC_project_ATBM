@@ -9,22 +9,24 @@ top=Axis(fig[1, 1], xlabel=L"$U/t$", ylabel=L"$χ_{\mathrm{spin}}^{} [\mathbf{Q}
     xlabelsize=30, title=my_title
 )
 
-
 for (idx, (Ts, Ls)) in enumerate(zip(df_LT[:,:T],df_LT[:,:L]))
     num_U_points=length(df_LT[:,:T]);
     dfs=filter(:L=>L -> L==Ls ,filter(:T =>T ->T==Ts, df))  
     eb=errorbars!(dfs[!,:U], dfs[!,Symbol("SDS_Mx_x" * "_$(q0[1])$(q0[2])")], 
-            dfs[!,Symbol("ΔSDS_Mx_x" * "_$(q0[1])$(q0[2])")]; linewidth=er_lw, 
-            whiskerwidth=10,color = colorschemes[:coolwarm][1-1/Ts/βmax])
+        dfs[!,Symbol("ΔSDS_Mx_x" * "_$(q0[1])$(q0[2])")]; linewidth=er_lw, 
+        whiskerwidth=10,color = colorschemes[:coolwarm][1-1/Ts/βmax]
+    )
     CairoMakie.translate!(eb, 0, 0, -0.5)
     CairoMakie.scatterlines!(top, dfs[!,:U], dfs[!,Symbol("SDS_Mx_x" * "_$(q0[1])$(q0[2])")] ;  marker = :xcross,
-            color = colorschemes[:coolwarm][1-1/Ts/βmax], label = "β=$((1/Ts))", markersize=20)
+        color = colorschemes[:coolwarm][1-1/Ts/βmax], label = "β=$((1/Ts))", markersize=20
+    )
 end
 axislegend( position=(0.04,0.97))
 
 display(fig)
-CairoMakie.save(joinpath(p, "chi_spin_Q($(q0[1]),$(q0[2])).png"), fig)
-
+if save_bool_fig
+    CairoMakie.save(joinpath(p, "chi_spin_Q($(q0[1]),$(q0[2])).png"), fig)
+end
 ########################
 ## spin susceptibility, Q=(π,0) + Q=(0,π)
 ########################
@@ -34,7 +36,6 @@ top=Axis(fig[1, 1], xlabel=L"$U/t$", ylabel=L"$χ_{\mathrm{spin}}^{A_1}$", ylabe
 )
 
 for (idx, (Ts, Ls)) in enumerate(zip(df_LT[:,:T],df_LT[:,:L]))
-    num_U_points=length(df_LT[:,:T]);
     dfs=filter(:L=>L -> L==Ls ,filter(:T =>T ->T==Ts, df))  
     df_ϕs=filter(:L=>L -> L==Ls ,filter(:T =>T ->T==Ts, df_ϕ))  
 
@@ -64,8 +65,9 @@ end
 axislegend( position=(0.04,0.97))
 
 display(fig)
-CairoMakie.save(joinpath(p, "chi_spin_A1.png"), fig)
-
+if save_bool_fig
+    CairoMakie.save(joinpath(p, "chi_spin_A1.png"), fig)
+end
 ########################
 ## spin susceptibility, Q=(π,0) + Q=(0,π), as function of temperature
 ########################
@@ -104,8 +106,9 @@ end
 axislegend(top, position=(1, 1))
 
 display(fig)
-CairoMakie.save(joinpath(p, "chi_spin_A1_T.png"), fig)
-
+if save_bool_fig
+    CairoMakie.save(joinpath(p, "chi_spin_A1_T.png"), fig)
+end
 
 ################
 ## spin correlation function, Q=(π,0) + Q=(0,π)
@@ -119,7 +122,6 @@ top=Axis(fig[1, 1],  ylabel=L"$S_{\mathrm{spin}}^{A_1}$",
 
 
 for (idx, (Ts, Ls)) in enumerate(zip(df_LT[:,:T],df_LT[:,:L]))
-    num_U_points=length(df_LT[:,:T]);
     dfs=filter(:L=>L -> L==Ls ,filter(:T =>T ->T==Ts, df))  
     df_ϕs=filter(:L=>L -> L==Ls ,filter(:T =>T ->T==Ts, df_ϕ))  
 
@@ -153,7 +155,6 @@ mid=Axis(fig[2, 1],  ylabel=L"$S_{\mathrm{spin}}^{(2), A_1}$",
 )
 
 for (idx, (Ts, Ls)) in enumerate(zip(df_LT[:,:T],df_LT[:,:L]))
-    num_U_points=length(df_LT[:,:T]);
     dfs=filter(:L=>L -> L==Ls ,filter(:T =>T ->T==Ts, df))  
     df_ϕs=filter(:L=>L -> L==Ls ,filter(:T =>T ->T==Ts, df_ϕ))  
 
@@ -199,8 +200,9 @@ for (idx, (Ts, Ls)) in enumerate(zip(df_OP_LT[:,:T],df_OP_LT[:,:L]))
 end
 
 display(fig)
-CairoMakie.save(joinpath(p, "corr_spin_A1.png"), fig)
-
+if save_bool_fig
+    CairoMakie.save(joinpath(p, "corr_spin_A1.png"), fig)
+end
 
 
 ################
@@ -298,8 +300,9 @@ end
 #axislegend( position=(1,1))
 
 display(fig)
-CairoMakie.save(joinpath(p, "corr_spin_A1_T.png"), fig)
-
+if save_bool_fig
+    CairoMakie.save(joinpath(p, "corr_spin_A1_T.png"), fig)
+end
 
 
 

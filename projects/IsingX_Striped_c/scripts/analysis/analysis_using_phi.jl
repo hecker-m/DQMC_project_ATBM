@@ -63,7 +63,8 @@ df_ϕ= DataFrame(df_ϕ_cols)
 ## order parameter measurements
 #######
 my_OP_keys=[(key=:Mx_OP , ), (key=:B1_OP , ),
-    (key=:A1p_OP, )]
+    (key=:A1p_OP, )
+]
 
 df_ϕ_OP_cols=(L=Int[], T=Float64[], U=Float64[], B=Int[], δτ=Float64[], μ0=Float64[]);
 for n in eachindex(my_OP_keys)

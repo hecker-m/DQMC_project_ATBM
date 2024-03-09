@@ -11,7 +11,6 @@ top=Axis(fig[1, 1], xlabel=L"$U/t$", ylabel=L"$χ_{\mathrm{bilinear}}^{B_1}$",
 )
 
 for (idx, (Ts, Ls)) in enumerate(zip(df_LT[:,:T],df_LT[:,:L]))
-    num_U_points=length(df_LT[:,:T]);
     dfs=filter(:L=>L -> L==Ls ,filter(:T =>T ->T==Ts, df))  
     df_ϕs=filter(:L=>L -> L==Ls ,filter(:T =>T ->T==Ts, df_ϕ))  
     
@@ -21,7 +20,7 @@ for (idx, (Ts, Ls)) in enumerate(zip(df_LT[:,:T],df_LT[:,:L]))
     )
     CairoMakie.translate!(eb, 0, 0, -0.5)
     CairoMakie.scatterlines!(top, dfs[!,:U], dfs[!,Symbol("NemS_X")]  ;  marker = :xcross,
-        color = colorschemes[:coolwarm][1-1/Ts/βmax], label = "β=$((1/Ts))", markersize=10
+        color = colorschemes[:coolwarm][1-1/Ts/βmax], label = L"$β=%$(1/Ts)$", markersize=10
     )
 
     CairoMakie.scatter!(top, df_ϕs[!,:U], df_ϕs[!,Symbol("NemS")] ;  
@@ -38,7 +37,9 @@ end
 
 axislegend( position=(0, 1))
 display(fig)
-CairoMakie.save(joinpath(p, "chi_nematic_B1_00.png"), fig)
+if save_bool_fig
+    CairoMakie.save(joinpath(p, "chi_nematic_B1_00.png"), fig)
+end
 
 ################
 ## B1 nematic susceptibility as a function of T
@@ -77,8 +78,9 @@ end
 
 axislegend( position=(1, 1))
 display(fig)
-CairoMakie.save(joinpath(p, "chi_nematic_B1_00_T.png"), fig)
-
+if save_bool_fig
+    CairoMakie.save(joinpath(p, "chi_nematic_B1_00_T.png"), fig)
+end
 
 ################
 ## B1 nematic correlation function
@@ -91,7 +93,6 @@ top=Axis(fig[1, 1],  ylabel=L"$S_{\mathrm{bilinear}}^{B_1} $",
 )
 
 for (idx, (Ts, Ls)) in enumerate(zip(df_LT[:,:T],df_LT[:,:L]))
-    num_U_points=length(df_LT[:,:T]);
     dfs=filter(:L=>L -> L==Ls ,filter(:T =>T ->T==Ts, df))  
     df_ϕs=filter(:L=>L -> L==Ls ,filter(:T =>T ->T==Ts, df_ϕ))  
 
@@ -101,7 +102,7 @@ for (idx, (Ts, Ls)) in enumerate(zip(df_LT[:,:T],df_LT[:,:L]))
     )
     CairoMakie.translate!(eb, 0, 0, -0.5)
     CairoMakie.scatterlines!(top, dfs[!,:U], dfs[!,Symbol("NemC_X")]  ;  marker = :xcross,
-        color = colorschemes[:coolwarm][1-1/Ts/βmax], label = "β=$((1/Ts))", markersize=10
+        color = colorschemes[:coolwarm][1-1/Ts/βmax], label = L"$β=%$(1/Ts)$", markersize=10
     )
 
     CairoMakie.scatter!(top, df_ϕs[!,:U], df_ϕs[!,Symbol("NemC")] ;  
@@ -123,7 +124,6 @@ mid=Axis(fig[2, 1],  ylabel=L"$S_{\mathrm{bilinear}}^{(2), B_1} $",
 )
 
 for (idx, (Ts, Ls)) in enumerate(zip(df_LT[:,:T],df_LT[:,:L]))
-    num_U_points=length(df_LT[:,:T]);
     dfs=filter(:L=>L -> L==Ls ,filter(:T =>T ->T==Ts, df))  
     df_ϕs=filter(:L=>L -> L==Ls ,filter(:T =>T ->T==Ts, df_ϕ))  
 
@@ -158,7 +158,7 @@ for (idx, (Ts, Ls)) in enumerate(zip(df_OP_LT[:,:T],df_OP_LT[:,:L]))
     )
     CairoMakie.translate!(eb, 0, 0, -0.5)
     CairoMakie.scatterlines!(bottom, df_OPs[!,:U], df_OPs[!,Symbol("B1_OP")] ;  marker = :xcross,
-        color = colorschemes[:coolwarm][1-1/Ts/βmax], label = "β=$((1/Ts))", markersize=10
+        color = colorschemes[:coolwarm][1-1/Ts/βmax], label = L"$β=%$(1/Ts)$", markersize=10
     ) 
         
     # CairoMakie.scatter!(top, df_ϕ_OPs[!,:U], df_ϕ_OPs[!,Symbol("B1_OP")] ;  
@@ -168,7 +168,9 @@ end
 #axislegend( position=(0, 1))
 
 display(fig)
-CairoMakie.save(joinpath(p, "corr_nematic_B1_00.png"), fig)
+if save_bool_fig
+    CairoMakie.save(joinpath(p, "corr_nematic_B1_00.png"), fig)
+end
 
 ################
 ## B1 nematic correlation function as function of temperature
@@ -265,4 +267,7 @@ end
 #axislegend( position=(0, 1))
 
 display(fig)
-CairoMakie.save(joinpath(p, "corr_nematic_B1_00_T.png"), fig)
+if save_bool_fig
+    CairoMakie.save(joinpath(p, "corr_nematic_B1_00_T.png"), fig)
+end
+

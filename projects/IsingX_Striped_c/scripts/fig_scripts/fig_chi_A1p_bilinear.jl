@@ -9,18 +9,17 @@ top=Axis(fig[1, 1], xlabel=L"$U/t$", ylabel=L"$χ_{\mathrm{bilinear}}^{A_1^{\pri
 )
 
 for (idx, (Ts, Ls)) in enumerate(zip(df_LT[:,:T],df_LT[:,:L]))
-    num_U_points=length(df_LT[:,:T]);
     dfs=filter(:L=>L -> L==Ls ,filter(:T =>T ->T==Ts, df)) 
     df_ϕs=filter(:L=>L -> L==Ls ,filter(:T =>T ->T==Ts, df_ϕ))  
  
-    eb=errorbars!(dfs[!,:U], df_ϕs[!,Symbol("A1p_dQ_S")], 
+    eb=errorbars!(top, dfs[!,:U], df_ϕs[!,Symbol("A1p_dQ_S")], 
         dfs[!,Symbol("ΔA1p_dQ_S_X")], df_ϕs[!,Symbol("ΔA1p_dQ_S")] ; linewidth=er_lw, 
         whiskerwidth=10,color = colorschemes[:coolwarm][1-1/Ts/βmax]
     )
     CairoMakie.translate!(eb, 0, 0, -0.5)
     CairoMakie.scatter!(top, dfs[!,:U], dfs[!,Symbol("A1p_dQ_S_X")]  ;  
         marker = :xcross,  color = colorschemes[:coolwarm][1-1/Ts/βmax], 
-        label = "β=$((1/Ts))", markersize=10
+        label = L"$β=%$(1/Ts)$", markersize=10
     )
 
     CairoMakie.scatterlines!(top, df_ϕs[!,:U], df_ϕs[!,Symbol("A1p_dQ_S")] ;  
@@ -35,7 +34,9 @@ end
 
 axislegend( position=(0, 1))
 display(fig)
-CairoMakie.save(joinpath(p, "chi_bilinear_A1p_00.png"), fig)
+if save_bool_fig
+    CairoMakie.save(joinpath(p, "chi_bilinear_A1p_00.png"), fig)
+end
 
 ################
 ## A1' bilinear susceptibility as a function of T
@@ -52,7 +53,7 @@ for (idx, (Us, Ls)) in enumerate(zip(df_LU[:,:U],df_LU[:,:L]))
     dfs=filter(:L=>L -> L==Ls ,filter(:U =>U ->U==Us, df))  
     df_ϕs=filter(:L=>L -> L==Ls ,filter(:U =>U ->U==Us, df_ϕ))  
 
-    eb=errorbars!(dfs[!,:T], df_ϕs[!,Symbol("A1p_dQ_S")]  , 
+    eb=errorbars!(top, dfs[!,:T], df_ϕs[!,Symbol("A1p_dQ_S")]  , 
         dfs[!,Symbol("ΔA1p_dQ_S_X")], df_ϕs[!,Symbol("ΔA1p_dQ_S")] ; linewidth=er_lw, 
         whiskerwidth=10,color = colorschemes[:tab20][1-idx/num_T_points]
     )
@@ -74,8 +75,9 @@ end
 
 axislegend( position=(1, 1))
 display(fig)
-CairoMakie.save(joinpath(p, "chi_bilinear_A1p_00_T.png"), fig)
-
+if save_bool_fig
+    CairoMakie.save(joinpath(p, "chi_bilinear_A1p_00_T.png"), fig)
+end
 
 ################
 ## A1' bilinear correlation function
@@ -88,7 +90,6 @@ top=Axis(fig[1, 1],  ylabel=L"$S_{\mathrm{bilinear}}^{A_1^{\prime}} $",
 )
 
 for (idx, (Ts, Ls)) in enumerate(zip(df_LT[:,:T],df_LT[:,:L]))
-    num_U_points=length(df_LT[:,:T]);
     dfs=filter(:L=>L -> L==Ls ,filter(:T =>T ->T==Ts, df)) 
     df_ϕs=filter(:L=>L -> L==Ls ,filter(:T =>T ->T==Ts, df_ϕ))  
  
@@ -98,7 +99,7 @@ for (idx, (Ts, Ls)) in enumerate(zip(df_LT[:,:T],df_LT[:,:L]))
     )
     CairoMakie.translate!(eb, 0, 0, -0.5)
     CairoMakie.scatter!(top, dfs[!,:U], dfs[!,Symbol("A1p_dQ_C_X")]  ;  marker = :xcross,
-        color = colorschemes[:coolwarm][1-1/Ts/βmax], label = "β=$((1/Ts))", markersize=10
+        color = colorschemes[:coolwarm][1-1/Ts/βmax], label = L"$β=%$(1/Ts)$", markersize=10
     )
 
     CairoMakie.scatterlines!(top, df_ϕs[!,:U], df_ϕs[!,Symbol("A1p_dQ_C")] ;  
@@ -121,7 +122,6 @@ mid=Axis(fig[2, 1],  ylabel=L"$S_{\mathrm{bilinear}}^{(2),A_1^{\prime}} $",
 )
 
 for (idx, (Ts, Ls)) in enumerate(zip(df_LT[:,:T],df_LT[:,:L]))
-    num_U_points=length(df_LT[:,:T]);
     dfs=filter(:L=>L -> L==Ls ,filter(:T =>T ->T==Ts, df)) 
     df_ϕs=filter(:L=>L -> L==Ls ,filter(:T =>T ->T==Ts, df_ϕ))  
  
@@ -158,7 +158,7 @@ for (idx, (Ts, Ls)) in enumerate(zip(df_OP_LT[:,:T],df_OP_LT[:,:L]))
     )
     CairoMakie.translate!(eb, 0, 0, -0.5)
     CairoMakie.scatterlines!(bottom, df_OPs[!,:U], df_OPs[!,Symbol("A1p_OP")] ;  marker = :xcross,
-        color = colorschemes[:coolwarm][1-1/Ts/βmax], label = "β=$((1/Ts))", 
+        color = colorschemes[:coolwarm][1-1/Ts/βmax], label = L"$β=%$(1/Ts)$", 
         markersize=10
     ) 
         
@@ -169,7 +169,9 @@ end
 #axislegend( position=(0, 1))
 
 display(fig)
-CairoMakie.save(joinpath(p, "corr_bilinear_A1p_00.png"), fig)
+if save_bool_fig
+    CairoMakie.save(joinpath(p, "corr_bilinear_A1p_00.png"), fig)
+end
 
 ################
 ## A1' bilinear correlation function as function of temperature
@@ -263,4 +265,6 @@ end
 #axislegend( position=(0, 1))
 
 display(fig)
-CairoMakie.save(joinpath(p, "corr_bilinear_A1p_00_T.png"), fig)
+if save_bool_fig
+    CairoMakie.save(joinpath(p, "corr_bilinear_A1p_00_T.png"), fig)
+end

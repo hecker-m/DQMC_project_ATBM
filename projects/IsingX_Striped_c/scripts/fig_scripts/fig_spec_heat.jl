@@ -57,9 +57,10 @@ axislegend( position=(1, 0))
 ################
 bottom=Axis(fig[2, 1], xlabel=L"$T/t$", ylabel=L"$\mathrm{C_V}$", 
     xlabelsize=30, ylabelsize=30,
-    xticklabelsize=20, yticklabelsize=20, limits= (nothing, nothing))
+    xticklabelsize=20, yticklabelsize=20, limits= (nothing, nothing)
+)
 
-    count=1;
+count=1;
 for (idx, (Us, Ls)) in enumerate(zip(df_LU[:,:U],df_LU[:,:L]))
     if Us ==U0
     dfs=filter(:L=>L -> L==Ls ,filter(:U =>U ->U==Us, df))  

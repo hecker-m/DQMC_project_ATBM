@@ -11,7 +11,6 @@ top=Axis(fig[1, 1], xlabel=L"$U/t$", ylabel=L"$χ_{\mathrm{bilinear}}^{B_1^{\pri
 
 
 for (idx, (Ts, Ls)) in enumerate(zip(df_LT[:,:T],df_LT[:,:L]))
-    num_U_points=length(df_LT[:,:T]);
     dfs=filter(:L=>L -> L==Ls ,filter(:T =>T ->T==Ts, df))  
     eb=errorbars!(top, dfs[!,:U], dfs[!,Symbol("B1p_dQ_S_00")] , 
         dfs[!,Symbol("ΔB1p_dQ_S_00")]; linewidth=er_lw, 
@@ -19,14 +18,15 @@ for (idx, (Ts, Ls)) in enumerate(zip(df_LT[:,:T],df_LT[:,:L]))
     )
     CairoMakie.translate!(eb, 0, 0, -0.5)
     CairoMakie.scatterlines!(top, dfs[!,:U], dfs[!,Symbol("B1p_dQ_S_00")]  ;  marker = :xcross,
-        color = colorschemes[:coolwarm][1-1/Ts/βmax], label = "β=$((1/Ts))", markersize=10
+        color = colorschemes[:coolwarm][1-1/Ts/βmax], label = L"$β=%$(1/Ts)$", markersize=10
     )
 end
 
 axislegend( position=(1, 1))
 display(fig)
-CairoMakie.save(joinpath(p, "chi_bilinear_B1p_00.png"), fig)
-
+if save_bool_fig
+    CairoMakie.save(joinpath(p, "chi_bilinear_B1p_00.png"), fig)
+end
 
 
 ################
@@ -39,7 +39,6 @@ top=Axis(fig[1, 1],  xlabel= L"$U/t$", ylabel=L"$S_{\mathrm{bilinear}}^{B_1^{\pr
 )
 
 for (idx, (Ts, Ls)) in enumerate(zip(df_LT[:,:T],df_LT[:,:L]))
-    num_U_points=length(df_LT[:,:T]);
     dfs=filter(:L=>L -> L==Ls ,filter(:T =>T ->T==Ts, df))  
     eb=errorbars!(top, dfs[!,:U], dfs[!,Symbol("B1p_dQ_C_00")] , 
         dfs[!,Symbol("ΔB1p_dQ_C_00")]; linewidth=er_lw, 
@@ -47,10 +46,12 @@ for (idx, (Ts, Ls)) in enumerate(zip(df_LT[:,:T],df_LT[:,:L]))
     )
     CairoMakie.translate!(eb, 0, 0, -0.5)
     CairoMakie.scatterlines!(top, dfs[!,:U], dfs[!,Symbol("B1p_dQ_C_00")]  ;  marker = :xcross,
-        color = colorschemes[:coolwarm][1-1/Ts/βmax], label = "β=$((1/Ts))", markersize=10
+        color = colorschemes[:coolwarm][1-1/Ts/βmax], label = L"$β=%$(1/Ts)$", markersize=10
     )
 end
 axislegend( position=(0, 1))
 
 display(fig)
-CairoMakie.save(joinpath(p, "corr_bilinear_B1p_00.png"), fig)
+if save_bool_fig
+    CairoMakie.save(joinpath(p, "corr_bilinear_B1p_00.png"), fig)
+end
