@@ -88,7 +88,7 @@ end
 To overcome conflicts in MonteCarlo.jl versioning,
 I defined my own load function
 
-_load(dqmcs::Array, L::Int, T::Real, beta::Real, U::Real, peierls::Bool, 
+`_load`(dqmcs::Array, L::Int, T::Real, beta::Real, U::Real, peierls::Bool, 
     therm::Int, sweeps::Int, N_worker::Int, beta_bool::Bool, jobid::Int=0; 
    path="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/Reprod_Fernandes_Paper/run_saves/", 
    prefix_folder="", prefix_file="FP_", kwargs...)
@@ -98,31 +98,38 @@ were loaded into the array dqmcs.
 
 kwargs are _recorder=true, _th_meas=true, _meas=true from my_load(data["MC"], Val(:DQMC); kwargs...)
 """
-function _load(dqmcs::Array, L::Int, T::Real, beta::Real, U::Real, peierls::Bool, 
+function _load(dqmcs::Array, L::Int, T::Real, beta::Real, peierls::Bool, 
      therm::Int, sweeps::Int, N_worker::Int, beta_bool::Bool, jobid::Int=0; 
     path="/home/mhecker/Google Drive/DQMC/AFM_2_band_model/Reprod_Fernandes_Paper/run_saves/", 
-    prefix_folder="", prefix_file="FP_", eps="", mu="", δτ="" , kwargs...)
+    prefix_folder="", prefix_file="FP_", eps="", U="" ,mu="", δτ="" , _folder_Uμ=U, kwargs...)
     
     beta_bool ? tempstring="b_" * to_string(beta) : tempstring="T_" * to_string(T)
 
     n_workers=0;
     for worker =1:N_worker
-        _path=path * prefix_folder * "L$(L)_" * tempstring * "_U_" * to_string(U) * eps * "_B_$(Int(peierls))" *δτ;
+
+        _path=path * prefix_folder * "L$(L)_" * tempstring * _folder_Uμ * eps * "_B_$(Int(peierls))" *δτ;
 
         if jobid==0
-            _filename=prefix_file * tempstring *"_U_"* to_string(U) * mu*
+            _filename=prefix_file * tempstring * U * mu*
             "_L$(L)" * eps * δτ * "_B_$(Int(peierls))_sw$(sweeps)_th$(therm)_worker_$(worker).jld2";
         else
-            _filename=prefix_file * tempstring *"_U_"* to_string(U) * mu*
+            _filename=prefix_file * tempstring * U * mu*
             "_L$(L)" * eps * δτ * "_B_$(Int(peierls))_sw$(sweeps)_th$(therm)_worker_$(worker)_id$(jobid).jld2";
         end
 
         filename=_path * "/" * _filename;
         if isfile(filename)
-            data = MonteCarlo.FileData(JLD2.load(filename), abspath(filename));
-            mc=my_load(data["MC"], Val(:DQMC); kwargs...)
-            push!(dqmcs, mc);
-            n_workers+=1;
+            local data
+            try
+                data = MonteCarlo.FileData(JLD2.load(filename), abspath(filename))
+            catch _error
+                println(string(typeof(_error)) * " occurred for worker_#$(worker) for L=$(L), β=$(beta), U=$(U), μ=$(mu)")
+            else
+                mc=my_load(data["MC"], Val(:DQMC); kwargs...)
+                push!(dqmcs, mc);
+                n_workers+=1;
+            end
         else
             println(filename * "   not found!")
         end
@@ -134,7 +141,7 @@ end
 #tag = Val(Symbol(data["Measurements"], "tag", :Measurements))
 #(see above), inside the load function.
 """
-_load_full(dqmcs, L::Int, T::Float64, U::Float64, peierls::Bool, 
+`_load_full`(dqmcs, L::Int, T::Float64, U::Float64, peierls::Bool, 
     jobid::Int, therm::Int, sweeps::Int, N_worker::Int; prefix::String="FP_")
 
 loads the full DQMC simulation, found at the specified path. 
