@@ -53,7 +53,7 @@ For different ordering vectors, there is a different number of observables we ca
 `make_binner_array()` generates an array with the appropriate number of FullBinners.
 """
 make_binner_array(::Val{:Qππ}, Nϕ) = [FullBinner(Float64) for i = 1:4]
-make_binner_array(::Val{:Q0πQπ0}, Nϕ) = Nϕ == 1 ? [FullBinner(Float64) for i = 1:(12+2+4+10)] : [FullBinner(Float64) for i = 1:16]
+make_binner_array(::Val{:Q0πQπ0}, Nϕ) = Nϕ == 1 ? [FullBinner(Float64) for i = 1:(12+2+4+10+10+5)] : [FullBinner(Float64) for i = 1:16]
 make_binner_array(::Val{:Q0πQπ0_offset}, Nϕ) = Nϕ == 1 ? [FullBinner(Float64) for i = 1:(12+3)] : [FullBinner(Float64) for i = 1:16]
 
 
@@ -137,7 +137,28 @@ function calc_observables!(binner_array::Array, mc::DQMC, ϕ_field::Array, ::Val
         ϕQ1Q2_bar[ζ] = mean(ϕQ1Q2[ζ, :])
     end
 
-    ΦPA1, ΦPB1, ΦPA1p = calc_ΦP_bars(mc, ϕ_field)
+    # ΦA1_gd4, ΦB1_gd4, ΦA1p_gd4, ΦA1_gd2, ΦB1_gd2, ΦA1p_gd2, Φ_proxy_A1, ΦP_proxy_A1, Φ_proxy_B1, ΦP_proxy_B1 = calc_ΦP_bars(mc, ϕ_field)
+
+    dict_Φbars = Dict{String,Vector}([("ΦA1_gd4", zeros(Float64, Nτ)), ("ΦB1_gd4", zeros(Float64, Nτ)),
+        ("ΦA1p_gd4", zeros(Float64, Nτ)), ("ΦA1_gd2", zeros(Float64, Nτ)), ("ΦB1_gd2", zeros(Float64, Nτ)),
+        ("ΦA1p_gd2", zeros(Float64, Nτ)), ("Φ_proxy_A1", zeros(Float64, Nτ)), ("ΦP_proxy_A1", zeros(Float64, Nτ)),
+        ("Φ_proxy_B1", zeros(Float64, Nτ)), ("ΦP_proxy_B1", zeros(Float64, Nτ))]
+    )
+    calc_ΦP_bars!(dict_Φbars, mc, ϕ_field)
+
+    ΦA1_gd4 = dict_Φbars["ΦA1_gd4"]
+    ΦB1_gd4 = dict_Φbars["ΦB1_gd4"]
+    ΦA1p_gd4 = dict_Φbars["ΦA1p_gd4"]
+    ΦA1_gd2 = dict_Φbars["ΦA1_gd2"]
+    ΦB1_gd2 = dict_Φbars["ΦB1_gd2"]
+    ΦA1p_gd2 = dict_Φbars["ΦA1p_gd2"]
+    Φ_proxy_A1 = dict_Φbars["Φ_proxy_A1"]
+    ΦP_proxy_A1 = dict_Φbars["ΦP_proxy_A1"]
+    Φ_proxy_B1 = dict_Φbars["Φ_proxy_B1"]
+    ΦP_proxy_B1 = dict_Φbars["ΦP_proxy_B1"]
+
+
+
 
     S_spin = mean(ΦA1) - Nϕ / (N * U * δτ)
     S2_spin = mean(ΦA1 .^ 2) - 2 * (1 + Nϕ) / (N * U * δτ) * mean(ΦA1) + Nϕ * (1 + Nϕ) / (δτ^2 * N^2 * U^2)
@@ -152,35 +173,29 @@ function calc_observables!(binner_array::Array, mc::DQMC, ϕ_field::Array, ::Val
     ## #4 for the Binder cumulant, we also need S_spin^{(2)} = … = ⟨ [ϕ(0)⋅ϕ(0)]² ⟩ = ⟨ ΦA1² ⟩
     push!(binner_array[4], S2_spin)
 
-    S_bil_B1 = mean(ΦB1 .^ 2) - 2 / (N * U * δτ) * mean(ΦA1) + Nϕ / (δτ^2 * N^2 * U^2)
-    S2_bil_B1 = mean(ΦB1 .^ 4) - 12 / (N * δτ * U) * mean(ΦB1 .* ΦB1 .* ΦA1) +
-                6 * (Nϕ + 4) / (N^2 * δτ^2 * U^2) * mean(ΦB1 .* ΦB1) + 12 / (N^2 * δτ^2 * U^2) * mean(ΦA1 .* ΦA1) -
-                12 * (Nϕ + 2) / (N^3 * δτ^3 * U^3) * mean(ΦA1) + 3Nϕ * (Nϕ + 2) / (N^4 * δτ^4 * U^4)
-    χ_bil_B1 = β * mean(ΦB1)^2 - 2 / (N * U) * mean(ΦA1) + Nϕ / (δτ * N^2 * U^2)
+    # S_bil_B1 = mean(ΦB1 .^ 2) - 2 / (N * U * δτ) * mean(ΦA1) + Nϕ / (δτ^2 * N^2 * U^2)
+    # S2_bil_B1 = mean(ΦB1 .^ 4) - 12 / (N * δτ * U) * mean(ΦB1 .* ΦB1 .* ΦA1) +
+    #             6 * (Nϕ + 4) / (N^2 * δτ^2 * U^2) * mean(ΦB1 .* ΦB1) + 12 / (N^2 * δτ^2 * U^2) * mean(ΦA1 .* ΦA1) -
+    #             12 * (Nϕ + 2) / (N^3 * δτ^3 * U^3) * mean(ΦA1) + 3Nϕ * (Nϕ + 2) / (N^4 * δτ^4 * U^4)
+    # χ_bil_B1 = β * mean(ΦB1)^2 - 2 / (N * U) * mean(ΦA1) + Nϕ / (δτ * N^2 * U^2)
 
     ## #5 is the nematic order parameter ⟨ |ΦB1| ⟩
     push!(binner_array[5], mean(abs.(ΦB1)))
     ## #6 is the nematic structure factor S_{nem}^{B₁} = …  = ⟨ ΦB1²(0) ⟩
-    push!(binner_array[6], S_bil_B1)
+    push!(binner_array[6], compute_S_bil_XX(mc, ΦB1, ΦA1; R=N))
     ## #7 is the nematic susceptibility β*1/(Nτ²)∑_{ℓ,ℓ′} ⟨ ΦB1(ℓ) ΦB1(ℓ′)⟩  ± …
-    push!(binner_array[7], χ_bil_B1)
+    push!(binner_array[7], compute_χ_bil_XX(mc, ΦB1, ΦA1; R=N))
     ## #8 for the Binder cumulant, we also need  S_{nem}^{(2),B₁} = …  = ⟨ ΦB1⁴ ⟩
-    push!(binner_array[8], S2_bil_B1)
-
-    S_bil_A1p = mean(ΦA1p .^ 2) - 2 / (N * U * δτ) * mean(ΦA1) + Nϕ / (δτ^2 * N^2 * U^2)
-    S2_bil_A1p = mean(ΦA1p .^ 4) - 12 / (N * δτ * U) * mean(ΦA1p .* ΦA1p .* ΦA1) +
-                 6 * (Nϕ + 4) / (N^2 * δτ^2 * U^2) * mean(ΦA1p .* ΦA1p) + 12 / (N^2 * δτ^2 * U^2) * mean(ΦA1 .* ΦA1) -
-                 12 * (Nϕ + 2) / (N^3 * δτ^3 * U^3) * mean(ΦA1) + 3Nϕ * (Nϕ + 2) / (N^4 * δτ^4 * U^4)
-    χ_bil_A1p = β * mean(ΦA1p)^2 - 2 / (N * U) * mean(ΦA1) + Nϕ / (δτ * N^2 * U^2)
+    push!(binner_array[8], compute_S2_bil_XX(mc, ΦB1, ΦA1; R=N))
 
     ## #9 is the A1′ bilinear order parameter ⟨ |ΦA1′| ⟩
     push!(binner_array[9], mean(abs.(ΦA1p)))
     ## #10 is the A1′ bilinear structure factor ⟨ (ΦA1′)²(0) ⟩
-    push!(binner_array[10], S_bil_A1p)
+    push!(binner_array[10], compute_S_bil_XX(mc, ΦA1p, ΦA1; R=N))
     ## #11 is the A1′ bilinear susceptibility 1/(Nτ²)∑_{ℓ,ℓ′} ⟨ ΦA1′(ℓ) ΦA1′(ℓ′)⟩  ± …
-    push!(binner_array[11], χ_bil_A1p)
+    push!(binner_array[11], compute_χ_bil_XX(mc, ΦA1p, ΦA1; R=N))
     ## #12 for the Binder cumulant, we also need  ⟨ (ΦA1′)⁴ ⟩
-    push!(binner_array[12], S2_bil_A1p)
+    push!(binner_array[12], compute_S2_bil_XX(mc, ΦA1p, ΦA1; R=N))
 
 
     #h4 binner [13] and h4_OnSite binner [14] 
@@ -195,40 +210,43 @@ function calc_observables!(binner_array::Array, mc::DQMC, ϕ_field::Array, ::Val
     push!(binner_array[17], mean(ϕQ1Q2[1, :]))
     push!(binner_array[18], mean(ϕQ1Q2[2, :]))
 
-    SP_bil_B1 = mean(ΦPB1 .^ 2) - 8 / (N^2 * U * δτ) * mean(ΦPA1) + 4 / (δτ^2 * N^3 * U^2)
-    SP2_bil_B1 = mean(ΦPB1 .^ 4) - 48 / (N^2 * δτ * U) * mean(ΦPB1 .* ΦPB1 .* ΦPA1) +
-                 24 * (1 + 16 / N) / (N^3 * δτ^2 * U^2) * mean(ΦPB1 .* ΦPB1) + 192 / (N^4 * δτ^2 * U^2) * mean(ΦPA1 .* ΦPA1) -
-                 192 * (1 + 8 / N) / (N^5 * δτ^3 * U^3) * mean(ΦPA1) + 48 * (1 + 8 / N) / (N^6 * δτ^4 * U^4)
 
-    χP_bil_B1 = β * mean(ΦPB1)^2 - 8 / (N^2 * U) * mean(ΦPA1) + 4 / (δτ * N^3 * U^2)
 
-    ## #5 is the nematic order parameter ⟨ |ΦB1| ⟩
-    push!(binner_array[19], mean(abs.(ΦPB1)))
-    ## #6 is the nematic structure factor S_{nem}^{B₁} = …  = ⟨ ΦB1²(0) ⟩
-    push!(binner_array[20], SP_bil_B1)
-    ## #7 is the nematic susceptibility β*1/(Nτ²)∑_{ℓ,ℓ′} ⟨ ΦB1(ℓ) ΦB1(ℓ′)⟩  ± …
-    push!(binner_array[21], χP_bil_B1)
-    ## #8 for the Binder cumulant, we also need  S_{nem}^{(2),B₁} = …  = ⟨ ΦB1⁴ ⟩
-    push!(binner_array[22], SP2_bil_B1)
+    push!(binner_array[19], mean(abs.(ΦB1_gd4)))
+    push!(binner_array[20], compute_S_bil_XX(mc, ΦB1_gd4, ΦA1_gd4; R=4))
+    push!(binner_array[21], compute_χ_bil_XX(mc, ΦB1_gd4, ΦA1_gd4; R=4))
+    push!(binner_array[22], compute_S2_bil_XX(mc, ΦB1_gd4, ΦA1_gd4; R=4))
 
-    SP_bil_A1p = mean(ΦPA1p .^ 2) - 8 / (N^2 * U * δτ) * mean(ΦPA1) + 4 / (δτ^2 * N^3 * U^2)
-    SP2_bil_A1p = mean(ΦPA1p .^ 4) - 48 / (N^2 * δτ * U) * mean(ΦPA1p .* ΦPA1p .* ΦPA1) +
-                  24 * (1 + 16 / N) / (N^3 * δτ^2 * U^2) * mean(ΦPA1p .* ΦPA1p) + 192 / (N^4 * δτ^2 * U^2) * mean(ΦPA1 .* ΦPA1) -
-                  192 * (1 + 8 / N) / (N^5 * δτ^3 * U^3) * mean(ΦPA1) + 48 * (1 + 8 / N) / (N^6 * δτ^4 * U^4)
+    push!(binner_array[23], mean(abs.(ΦA1p_gd4)))
+    push!(binner_array[24], compute_S_bil_XX(mc, ΦA1p_gd4, ΦA1_gd4; R=4))
+    push!(binner_array[25], compute_χ_bil_XX(mc, ΦA1p_gd4, ΦA1_gd4; R=4))
+    push!(binner_array[26], compute_S2_bil_XX(mc, ΦA1p_gd4, ΦA1_gd4; R=4))
 
-    χP_bil_A1p = β * mean(ΦPA1p)^2 - 8 / (N^2 * U) * mean(ΦPA1) + 4 / (δτ * N^3 * U^2)
+    push!(binner_array[27], mean(ΦA1p_gd4))
+    push!(binner_array[28], mean(ΦB1_gd4))
 
-    ## #9 is the A1′ bilinear order parameter ⟨ |ΦA1′| ⟩
-    push!(binner_array[23], mean(abs.(ΦPA1p)))
-    ## #10 is the A1′ bilinear structure factor ⟨ (ΦA1′)²(0) ⟩
-    push!(binner_array[24], SP_bil_A1p)
-    ## #11 is the A1′ bilinear susceptibility 1/(Nτ²)∑_{ℓ,ℓ′} ⟨ ΦA1′(ℓ) ΦA1′(ℓ′)⟩  ± …
-    push!(binner_array[25], χP_bil_A1p)
-    ## #12 for the Binder cumulant, we also need  ⟨ (ΦA1′)⁴ ⟩
-    push!(binner_array[26], SP2_bil_A1p)
 
-    push!(binner_array[27], mean(ΦPA1p))
-    push!(binner_array[28], mean(ΦPB1))
+
+    push!(binner_array[29], mean(abs.(ΦB1_gd2)))
+    push!(binner_array[30], compute_S_bil_XX(mc, ΦB1_gd2, ΦA1_gd2; R=2))
+    push!(binner_array[31], compute_χ_bil_XX(mc, ΦB1_gd2, ΦA1_gd2; R=2))
+    push!(binner_array[32], compute_S2_bil_XX(mc, ΦB1_gd2, ΦA1_gd2; R=2))
+
+    push!(binner_array[33], mean(abs.(ΦA1p_gd2)))
+    push!(binner_array[34], compute_S_bil_XX(mc, ΦA1p_gd2, ΦA1_gd2; R=2))
+    push!(binner_array[35], compute_χ_bil_XX(mc, ΦA1p_gd2, ΦA1_gd2; R=2))
+    push!(binner_array[36], compute_S2_bil_XX(mc, ΦA1p_gd2, ΦA1_gd2; R=2))
+
+    push!(binner_array[37], mean(ΦA1p_gd2))
+    push!(binner_array[38], mean(ΦB1_gd2))
+
+    #We redefined the original OP by a factor of 1/2. (And were too lazy to adjust all equations.)
+    push!(binner_array[39], mean(abs.(Φ_proxy_B1)) / 2)
+    push!(binner_array[40], compute_S_bil_XX(mc, Φ_proxy_B1, Φ_proxy_A1; R=2) / (2^2))
+    push!(binner_array[41], compute_χ_bil_XX(mc, Φ_proxy_B1, Φ_proxy_A1; R=2) / (2^2))
+    push!(binner_array[42], compute_S2_nem_proxy(mc, Φ_proxy_B1, Φ_proxy_A1, ΦP_proxy_B1, ΦP_proxy_A1; R=2) / (2^4))
+
+    push!(binner_array[43], mean(Φ_proxy_B1) / 2)
 
     if Nϕ > 1
         DA1_ΦB1p = Vector{Float64}(undef, Nτ)
@@ -342,6 +360,160 @@ function calc_observables!(binner_array::Array, mc::DQMC, ϕ_field::Array, ::Val
     end
 end
 
+@inline function compute_S2_bil_XX(mc::DQMC, Φ_XX::Array, Φ_A1::Array; R::Real=length(mc.model.l))
+    U = mc.model.U
+    N = length(mc.model.l)
+    δτ = mc.parameters.delta_tau
+    return (mean(Φ_XX .^ 4) - 12 / (N * δτ * U) * mean(Φ_XX .* Φ_XX .* Φ_A1) +
+            6 * (1 / R + 4 / N) / (N * δτ^2 * U^2) * mean(Φ_XX .* Φ_XX) + 12 / (N^2 * δτ^2 * U^2) * mean(Φ_A1 .* Φ_A1) -
+            12 * (1 / R + 2 / N) / (N^2 * δτ^3 * U^3) * mean(Φ_A1) + 3 * (1 / R + 2 / N) / (R * N^2 * δτ^4 * U^4)
+    )
+end
+
+@inline function compute_S2_nem_proxy(mc::DQMC, Φ_XX::Array, Φ_A1::Array, ΦP_XX::Array, ΦP_A1::Array; R::Real=2)
+    U = mc.model.U
+    N = length(mc.model.l)
+    δτ = mc.parameters.delta_tau
+    return (mean(Φ_XX .^ 4) - 12 / (N * δτ * U) * mean(Φ_XX .* Φ_XX .* Φ_A1) +
+            (6 / R) / (N * δτ^2 * U^2) * mean(Φ_XX .* Φ_XX) + 30 / (N^2 * δτ^2 * U^2) * mean(Φ_XX .* ΦP_XX)
+            + 12 / (N^2 * δτ^2 * U^2) * mean(Φ_A1 .* Φ_A1) -
+            (12 / R) / (N^2 * δτ^3 * U^3) * mean(Φ_A1) - 24 / (N^3 * δτ^3 * U^3) * mean(ΦP_A1)
+            + (3 / R^2) / (N^2 * δτ^4 * U^4) + (27 / 4) / (N^3 * δτ^4 * U^4)
+    )
+end
+
+@inline function compute_S_bil_XX(mc::DQMC, Φ_XX::Array, Φ_A1::Array; R::Real=length(mc.model.l))
+    U = mc.model.U
+    N = length(mc.model.l)
+    δτ = mc.parameters.delta_tau
+    return mean(Φ_XX .^ 2) - 2 / (N * U * δτ) * mean(Φ_A1) + 1 / (R * δτ^2 * N * U^2)
+end
+@inline function compute_χ_bil_XX(mc::DQMC, Φ_XX::Array, Φ_A1::Array; R::Real=length(mc.model.l))
+    U = mc.model.U
+    N = length(mc.model.l)
+    δτ = mc.parameters.delta_tau
+    β = mc.parameters.beta
+    return β * mean(Φ_XX)^2 - 2 / (N * U) * mean(Φ_A1) + 1 / (R * δτ * N * U^2)
+end
+
+
+
+@inline function δ_B1_function(lat::Lattice, d::Int; dict::Dict=make_dirs_dict(lat))
+    return -1 / 2 * (I[d, dict[:P1a₁]] + I[d, dict[:M1a₁]] - I[d, dict[:P1a₂]] - I[d, dict[:M1a₂]]
+    )
+end
+@inline function δP_B1_function(lat::Lattice, d::Int; dict::Dict=make_dirs_dict(lat))
+    return -(9 / 8 * (I[d, dict[:P1a₁]] + I[d, dict[:M1a₁]] - I[d, dict[:P1a₂]] - I[d, dict[:M1a₂]])
+            + 1 / 8 * (I[d, dict[:P3a₁]] + I[d, dict[:M3a₁]] - I[d, dict[:P3a₂]] - I[d, dict[:M3a₂]])
+            + 3 / 8 * (I[d, dict[:P1a₁M2a₂]] + I[d, dict[:P1a₁P2a₂]] -
+                       I[d, dict[:P2a₁P1a₂]] - I[d, dict[:P2a₁M1a₂]] + I[d, dict[:M1a₁M2a₂]] +
+                       I[d, dict[:M1a₁P2a₂]] - I[d, dict[:M2a₁P1a₂]] - I[d, dict[:M2a₁M1a₂]])
+    )
+end
+@inline function δ_A1_function(lat::Lattice, d::Int; dict::Dict=make_dirs_dict(lat))
+    return (I[d, 1] + 1 / 4 * (I[d, dict[:P2a₁]] + I[d, dict[:M2a₁]] + I[d, dict[:P2a₂]] + I[d, dict[:M2a₂]]) -
+            1 / 2 * (I[d, dict[:P1a₁P1a₂]] + I[d, dict[:M1a₁M1a₂]] + I[d, dict[:M1a₁P1a₂]] + I[d, dict[:P1a₁M1a₂]])
+    )
+end
+@inline function δP_A1_function(lat::Lattice, d::Int; dict::Dict=make_dirs_dict(lat))
+    return (9 / 4 * I[d, 1] + 1 * (I[d, dict[:P2a₁]] + I[d, dict[:M2a₁]] + I[d, dict[:P2a₂]] + I[d, dict[:M2a₂]]) -
+            3 / 2 * (I[d, dict[:P1a₁P1a₂]] + I[d, dict[:M1a₁M1a₂]] + I[d, dict[:M1a₁P1a₂]] + I[d, dict[:P1a₁M1a₂]]) +
+            1 / 16 * (I[d, dict[:P4a₁]] + I[d, dict[:M4a₁]] + I[d, dict[:P4a₂]] + I[d, dict[:M4a₂]]) +
+            3 / 8 * (I[d, dict[:P2a₁P2a₂]] + I[d, dict[:M2a₁M2a₂]] + I[d, dict[:M2a₁P2a₂]] + I[d, dict[:P2a₁M2a₂]]) -
+            1 / 4 * (I[d, dict[:P1a₁M3a₂]] + I[d, dict[:P1a₁P3a₂]] +
+                     I[d, dict[:P3a₁P1a₂]] + I[d, dict[:P3a₁M1a₂]] + I[d, dict[:M1a₁M3a₂]] +
+                     I[d, dict[:M1a₁P3a₂]] + I[d, dict[:M3a₁P1a₂]] + I[d, dict[:M3a₁M1a₂]])
+    )
+end
+
+
+function make_dirs_dict(lat::Lattice)
+    L = lat.Ls[1]
+    dir_dict = Dict{Symbol,Int}()
+    dir_dict[:P1a₁] = 2
+    dir_dict[:M1a₁] = L
+    dir_dict[:P1a₂] = 1 + L
+    dir_dict[:M1a₂] = 1 + L^2 - L
+
+    dir_dict[:P2a₁] = 3
+    dir_dict[:M2a₁] = L - 1
+    dir_dict[:P2a₂] = 1 + 2L
+    dir_dict[:M2a₂] = 1 + L^2 - 2L
+    dir_dict[:P1a₁P1a₂] = 2 + L
+    dir_dict[:M1a₁M1a₂] = L^2
+    dir_dict[:M1a₁P1a₂] = 2L
+    dir_dict[:P1a₁M1a₂] = L^2 - L + 2
+
+    dir_dict[:P3a₁] = 4
+    dir_dict[:M3a₁] = L - 2
+    dir_dict[:P3a₂] = 1 + 3L
+    dir_dict[:M3a₂] = 1 + L^2 - 3L
+    dir_dict[:P1a₁P2a₂] = 2 + 2L
+    dir_dict[:M1a₁M2a₂] = L^2 - L
+    dir_dict[:M1a₁P2a₂] = 3L
+    dir_dict[:P1a₁M2a₂] = 2 + L^2 - 2L
+    dir_dict[:P2a₁P1a₂] = 3 + L
+    dir_dict[:M2a₁M1a₂] = L^2 - 1
+    dir_dict[:M2a₁P1a₂] = 2L - 1
+    dir_dict[:P2a₁M1a₂] = L^2 - L + 3
+
+    dir_dict[:P4a₁] = 5
+    dir_dict[:M4a₁] = L - 3
+    dir_dict[:P4a₂] = 1 + 4L
+    dir_dict[:M4a₂] = 1 + L^2 - 4L
+    dir_dict[:P1a₁P3a₂] = 2 + 3L
+    dir_dict[:M1a₁M3a₂] = L^2 - 2L
+    dir_dict[:M1a₁P3a₂] = 4L
+    dir_dict[:P1a₁M3a₂] = 2 + L^2 - 3L
+    dir_dict[:P3a₁P1a₂] = 4 + L
+    dir_dict[:M3a₁M1a₂] = L^2 - 2
+    dir_dict[:M3a₁P1a₂] = 2L - 2
+    dir_dict[:P3a₁M1a₂] = L^2 - L + 4
+    dir_dict[:P2a₁P2a₂] = 3 + 2L
+    dir_dict[:M2a₁M2a₂] = L^2 - L - 1
+    dir_dict[:M2a₁P2a₂] = 3L - 1
+    dir_dict[:P2a₁M2a₂] = 3 + L^2 - 2L
+    return dir_dict
+end
+
+function compute_δ(lat::Lattice; δ_function::Function=δ_B1_function,
+    full_list=false, atol=1e-13)
+    L = lat.Ls[1]
+    dirs_Bravais = directions(Bravais(lat))
+
+    dirs_dict = make_dirs_dict(lat)
+    δ_s = Vector{Tuple}()
+    sizehint!(δ_s, length(lat))
+    for (idx, d) in enumerate(dirs_Bravais)
+        δ_val = δ_function(lat, idx; dict=dirs_dict)
+
+        if full_list && isapprox(δ_val, 0.0, atol=atol)
+            push!(δ_s, (idx, d, 0.0))
+        end
+        if !isapprox(δ_val, 0.0, atol=atol)
+            push!(δ_s, (idx, d, δ_val))
+        end
+    end
+    return δ_s
+end
+
+compute_δ_B1(lat::Lattice) = compute_δ(lat; δ_function=δ_B1_function, full_list=false)
+compute_δ_B1_full(lat::Lattice) = compute_δ(lat; δ_function=δ_B1_function, full_list=true)
+compute_δP_B1(lat::Lattice) = compute_δ(lat; δ_function=δP_B1_function, full_list=false)
+compute_δP_B1_full(lat::Lattice) = compute_δ(lat; δ_function=δP_B1_function, full_list=true)
+compute_δ_A1(lat::Lattice) = compute_δ(lat; δ_function=δ_A1_function, full_list=false)
+compute_δ_A1_full(lat::Lattice) = compute_δ(lat; δ_function=δ_A1_function, full_list=true)
+compute_δP_A1(lat::Lattice) = compute_δ(lat; δ_function=δP_A1_function, full_list=false)
+compute_δP_A1_full(lat::Lattice) = compute_δ(lat; δ_function=δP_A1_function, full_list=true)
+
+
+
+
+compute_g_d_4(lat::Lattice) = compute_g_d(lat; Qs=[[0, 0], [π, 0], [0, π], [π, π]])
+compute_g_d_2(lat::Lattice) = compute_g_d(lat; Qs=[[π, 0], [0, π]])
+compute_g_d_4_full(lat::Lattice) = compute_g_d(lat; Qs=[[0, 0], [π, 0], [0, π], [π, π]], full_list=true)
+compute_g_d_2_full(lat::Lattice) = compute_g_d(lat; Qs=[[π, 0], [0, π]], full_list=true)
+
 """
     compute_g_d(lat::Lattice, d::Vector)
 
@@ -352,54 +524,55 @@ as being symmetrically around zero, roughly within px,py  ∈ [-π/2, π/2].
 By definition, the quantity g(`d`) is real.
 
 """
-function compute_g_d(lat::Lattice)
+function compute_g_d(lat::Lattice; Qs=[[0, 0], [π, 0], [0, π], [π, π]],
+    full_list=false, atol=1e-13)
     L = lat.Ls[1]
     @assert iseven(L) "L=$L is not an even number"
     dirs_Bravais = directions(Bravais(lat))
 
-    dict_p_vals = p_vals_symmetrized(lat)
+    dict_p_vals = p_vals_symmetrized(lat; Qs=Qs)
     p_vals = dict_p_vals[1]
-    red_fac = length(dict_p_vals)
+    R = length(Qs)
 
     gd_s = Vector{Tuple}()
+    sizehint!(gd_s, length(lat))
     for (idx, d) in enumerate(dirs_Bravais)
 
         gd = zero(ComplexF64)
         for (weight, p) in p_vals
             gd += weight * cis(-dot(p, d))
         end
-        @assert isapprox(imag(gd), 0.0, atol=1e-15) "Imaginary part of g(d) is not zero! It is $(imag(gd)) for d=$(d)"
+        @assert isapprox(imag(gd), 0.0, atol=atol) "Imaginary part of g(d) is not zero! It is $(imag(gd)) for d=$(d)"
 
-        if !isapprox(real(gd), 0.0, atol=1e-14)
-            push!(gd_s, (idx, d, real(gd) / (L^2 / red_fac)))
+        if full_list && isapprox(real(gd), 0.0, atol=atol)
+            push!(gd_s, (idx, d, 0))
+        end
+        if !isapprox(real(gd), 0.0, atol=atol)
+            push!(gd_s, (idx, d, real(gd) / (L^2 / R)))
         end
     end
-
 
     return gd_s
 end
 
-function p_vals_symmetrized(lat::Lattice{2})
-    Q0 = [0, 0]
-    Q1 = [π, 0]
-    Q2 = [0, π]
-    Q3 = [π, π]
-    p_vals, dict = p_vals_BZ4(lat; Qs=[Q0, Q1, Q2, Q3])
+@inline function p_vals_symmetrized(lat::Lattice{2}; Qs=[[0, 0], [π, 0], [0, π], [π, π]])
+    p_vals, dict = p_vals_BZ4(lat; Qs=Qs)
     return dict
 end
 
-function p_vals_BZ4(lat::Lattice{2}; Qs=[[0, 0], [π, 0], [0, π], [π, π]])
+@inline function p_vals_BZ4(lat::Lattice{2}; Qs=[[0, 0], [π, 0], [0, π], [π, π]])
     b1, b2 = MonteCarlo.reciprocal_vectors(lat)
     L1, L2 = lat.Ls
     p_vals = [ℓ1 / L1 * b1 + ℓ2 / L2 * b2 for ℓ1 in 0:L1-1, ℓ2 in 0:L2-1][:]
     dict = Dict{Int,Vector{Tuple}}()
     for q in 1:length(Qs)
         dict[q] = Vector{Tuple}()
+        sizehint!(dict[q], div(length(lat), length(Qs)))
     end
 
     for p in p_vals
         temp = [[norm(b1 + b2), (1, 1, 1)]]
-        for (idx, Q) in enumerate(Qs), n1 in [0, 1], n2 in [0, 1]
+        for (idx, Q) in enumerate(Qs), n1 in [0, 1, -1], n2 in [0, 1, -1]
             dist = norm(Q + n1 * b1 + n2 * b2 - p)
             if isapprox(dist, temp[1][1])
                 push!(temp, [dist, (idx, n1, n2)])
@@ -459,7 +632,7 @@ end
 Calculates 𝜱'(A₁)(ℓ) ,𝜱'(B₁)(ℓ), 𝜱'(A`₁)(ℓ), 
 returning the three vectors with ℓ=1,…,N_τ
 """
-@inline function calc_ΦP_bars(mc::DQMC, ϕ_field::Array)
+@inline function calc_ΦP_bars_slow(mc::DQMC, ϕ_field::Array)
     Nϕ = size(ϕ_field, 1)
     U = mc.model.U
     N_slices = mc.parameters.slices
@@ -467,7 +640,7 @@ returning the three vectors with ℓ=1,…,N_τ
     L = lat.Ls[1]
     N = length(lat)
     Bsrcdir2trg = lat[:Bravais_srcdir2trg]
-    gd_s = get!(lat, :gd_s, compute_g_d)
+    gd_s = get!(lat, :gd_s_4, compute_g_d_4)
 
     ΦP_bar_A1 = zeros(Float64, N_slices)
     ΦP_bar_B1 = zeros(Float64, N_slices)
@@ -490,11 +663,226 @@ returning the three vectors with ℓ=1,…,N_τ
             ΦP_bar_A1P[slice] += g_d * ((-1)^d_vec[1] + (-1)^d_vec[2]) * temp_ΦP_A1P
         end
     end
-    return ΦP_bar_A1 ./ (2U * N^2), ΦP_bar_B1 ./ (2U * N^2), ΦP_bar_A1P ./ (2U * N^2)
+    return ΦP_bar_A1 ./ (8U * N), ΦP_bar_B1 ./ (8U * N), ΦP_bar_A1P ./ (8U * N)
 end
 
 
 
+
+"""
+Calculates 𝜱'(A₁)(ℓ) ,𝜱'(B₁)(ℓ), 𝜱'(A`₁)(ℓ), 
+returning the three vectors with ℓ=1,…,N_τ
+Written for Nϕ=1.
+"""
+@inline function calc_ΦP_bars!(dict_Φbars::Dict, mc::DQMC, ϕ_field::Array)
+
+    U = mc.model.U
+    N_slices = mc.parameters.slices
+    lat = mc.model.l
+    L = lat.Ls[1]
+    N = length(lat)
+    dirs_Bravais = directions(Bravais(lat))
+
+    Bsrcdir2trg = lat[:Bravais_srcdir2trg]
+    #This function now only works for the compute_xxx_full versions of the below functions 
+    gd_s_4 = get!(lat, :gd_s_4, compute_g_d_4_full)
+    gd_s_2 = get!(lat, :gd_s_2, compute_g_d_2_full)
+    δ_A1_s = get!(lat, :δ_A1, compute_δ_A1_full)
+    δP_A1_s = get!(lat, :δP_A1, compute_δP_A1_full)
+    δ_B1_s = get!(lat, :δ_B1, compute_δ_B1_full)
+    δP_B1_s = get!(lat, :δP_B1, compute_δP_B1_full)
+
+    Φ_bar_A1_4 = dict_Φbars["ΦA1_gd4"]
+    Φ_bar_B1_4 = dict_Φbars["ΦB1_gd4"]
+    Φ_bar_A1P_4 = dict_Φbars["ΦA1p_gd4"]
+    Φ_bar_A1_2 = dict_Φbars["ΦA1_gd2"]
+    Φ_bar_B1_2 = dict_Φbars["ΦB1_gd2"]
+    Φ_bar_A1P_2 = dict_Φbars["ΦA1p_gd2"]
+    Φ_bar_proxy_A1 = dict_Φbars["Φ_proxy_A1"]
+    ΦP_bar_proxy_A1 = dict_Φbars["ΦP_proxy_A1"]
+    Φ_bar_proxy_B1 = dict_Φbars["Φ_proxy_B1"]
+    ΦP_bar_proxy_B1 = dict_Φbars["ΦP_proxy_B1"]
+
+    temp_vec = Vector{Float64}(undef, N_slices)
+    @inbounds @fastmath for (d_index, d_vec) in enumerate(dirs_Bravais)
+
+        # @inbounds @fastmath for (d_index, d_vec, g_d) in gd_s_4
+
+        g_d4 = gd_s_4[d_index][3]
+        g_d2 = gd_s_2[d_index][3]
+
+        δ_A1 = δ_A1_s[d_index][3]
+        δP_A1 = δP_A1_s[d_index][3]
+        δ_B1 = δ_B1_s[d_index][3]
+        δP_B1 = δP_B1_s[d_index][3]
+
+        if !iszero(g_d4) || !iszero(g_d2) || !iszero(δ_A1) || !iszero(δP_A1) || !iszero(δ_B1) || !iszero(δP_B1)
+            gd_A1_4 = g_d4 * ((-1)^d_vec[1] + (-1)^d_vec[2])
+            gd_B1_4 = g_d4 * ((-1)^d_vec[1] - (-1)^d_vec[2])
+            gd_A1_2 = g_d2 * ((-1)^d_vec[1] + (-1)^d_vec[2])
+            gd_B1_2 = g_d2 * ((-1)^d_vec[1] - (-1)^d_vec[2])
+
+            for k in axes(ϕ_field, 2)
+                ky, kx = fldmod1(k, L)
+                kPd = Bsrcdir2trg[k, d_index]           # k + d  
+                fill_with_product!(temp_vec, view(ϕ_field, 1, kPd, :), view(ϕ_field, 1, k, :))
+
+                Φ_bar_A1_4[:] += temp_vec * gd_A1_4
+                Φ_bar_B1_4[:] += temp_vec * gd_B1_4
+                Φ_bar_A1P_4[:] += temp_vec * (-1)^(kx + ky) * gd_A1_4
+
+                Φ_bar_A1_2[:] += temp_vec * gd_A1_2
+                Φ_bar_B1_2[:] += temp_vec * gd_B1_2
+                Φ_bar_A1P_2[:] += temp_vec * (-1)^(kx + ky) * gd_A1_2
+
+                Φ_bar_proxy_A1[:] += temp_vec * δ_A1
+                ΦP_bar_proxy_A1[:] += temp_vec * δP_A1
+                Φ_bar_proxy_B1[:] += temp_vec * δ_B1
+                ΦP_bar_proxy_B1[:] += temp_vec * δP_B1
+
+            end
+        end
+    end
+    Φ_bar_A1_4 ./= (8U * N)
+    Φ_bar_B1_4 ./= (8U * N)
+    Φ_bar_A1P_4 ./= (8U * N)
+    Φ_bar_A1_2 ./= (4U * N)
+    Φ_bar_B1_2 ./= (4U * N)
+    Φ_bar_A1P_2 ./= (4U * N)
+    Φ_bar_proxy_A1 ./= (2U * N)
+    ΦP_bar_proxy_A1 ./= (2U * N)
+    Φ_bar_proxy_B1 ./= (2U * N)
+    ΦP_bar_proxy_B1 ./= (2U * N)
+    return nothing
+end
+
+
+"""
+Calculates 𝜱'(A₁)(ℓ) ,𝜱'(B₁)(ℓ), 𝜱'(A`₁)(ℓ), 
+returning the three vectors with ℓ=1,…,N_τ
+Written for Nϕ=1.
+"""
+@inline function calc_ΦP_bars(mc::DQMC, ϕ_field::Array)
+    U = mc.model.U
+    N_slices = mc.parameters.slices
+    lat = mc.model.l
+    L = lat.Ls[1]
+    N = length(lat)
+    dirs_Bravais = directions(Bravais(lat))
+
+    Bsrcdir2trg = lat[:Bravais_srcdir2trg]
+    #This function now only works for the compute_xxx_full versions of the below functions 
+    gd_s_4 = get!(lat, :gd_s_4, compute_g_d_4_full)
+    gd_s_2 = get!(lat, :gd_s_2, compute_g_d_2_full)
+    δ_A1_s = get!(lat, :δ_A1, compute_δ_A1_full)
+    δP_A1_s = get!(lat, :δP_A1, compute_δP_A1_full)
+    δ_B1_s = get!(lat, :δ_B1, compute_δ_B1_full)
+    δP_B1_s = get!(lat, :δP_B1, compute_δP_B1_full)
+
+    Φ_bar_A1_4 = zeros(Float64, N_slices)
+    Φ_bar_B1_4 = zeros(Float64, N_slices)
+    Φ_bar_A1P_4 = zeros(Float64, N_slices)
+    Φ_bar_A1_2 = zeros(Float64, N_slices)
+    Φ_bar_B1_2 = zeros(Float64, N_slices)
+    Φ_bar_A1P_2 = zeros(Float64, N_slices)
+
+    Φ_bar_proxy_B1 = zeros(Float64, N_slices)
+    ΦP_bar_proxy_B1 = zeros(Float64, N_slices)
+    Φ_bar_proxy_A1 = zeros(Float64, N_slices)
+    ΦP_bar_proxy_A1 = zeros(Float64, N_slices)
+
+    temp_vec = Vector{Float64}(undef, N_slices)
+    @inbounds @fastmath for (d_index, d_vec) in enumerate(dirs_Bravais)
+
+        # @inbounds @fastmath for (d_index, d_vec, g_d) in gd_s_4
+
+        g_d4 = gd_s_4[d_index][3]
+        g_d2 = gd_s_2[d_index][3]
+
+        δ_A1 = δ_A1_s[d_index][3]
+        δP_A1 = δP_A1_s[d_index][3]
+        δ_B1 = δ_B1_s[d_index][3]
+        δP_B1 = δP_B1_s[d_index][3]
+
+        if !iszero(g_d4) || !iszero(g_d2) || !iszero(δ_A1) || !iszero(δP_A1) || !iszero(δ_B1) || !iszero(δP_B1)
+            gd_A1_4 = g_d4 * ((-1)^d_vec[1] + (-1)^d_vec[2])
+            gd_B1_4 = g_d4 * ((-1)^d_vec[1] - (-1)^d_vec[2])
+            gd_A1_2 = g_d2 * ((-1)^d_vec[1] + (-1)^d_vec[2])
+            gd_B1_2 = g_d2 * ((-1)^d_vec[1] - (-1)^d_vec[2])
+
+            for k in axes(ϕ_field, 2)
+                ky, kx = fldmod1(k, L)
+                kPd = Bsrcdir2trg[k, d_index]           # k + d  
+                fill_with_product!(temp_vec, view(ϕ_field, 1, kPd, :), view(ϕ_field, 1, k, :))
+
+                Φ_bar_A1_4 += temp_vec * gd_A1_4
+                Φ_bar_B1_4 += temp_vec * gd_B1_4
+                Φ_bar_A1P_4 += temp_vec * (-1)^(kx + ky) * gd_A1_4
+
+                Φ_bar_A1_2 += temp_vec * gd_A1_2
+                Φ_bar_B1_2 += temp_vec * gd_B1_2
+                Φ_bar_A1P_2 += temp_vec * (-1)^(kx + ky) * gd_A1_2
+
+                Φ_bar_proxy_A1 += temp_vec * δ_A1
+                ΦP_bar_proxy_A1 += temp_vec * δP_A1
+                Φ_bar_proxy_B1 += temp_vec * δ_B1
+                ΦP_bar_proxy_B1 += temp_vec * δP_B1
+
+            end
+        end
+    end
+    return Φ_bar_A1_4 ./ (8U * N), Φ_bar_B1_4 ./ (8U * N), Φ_bar_A1P_4 ./ (8U * N),
+    Φ_bar_A1_2 ./ (4U * N), Φ_bar_B1_2 ./ (4U * N), Φ_bar_A1P_2 ./ (4U * N),
+    Φ_bar_proxy_A1 ./ (2U * N), ΦP_bar_proxy_A1 ./ (2U * N), Φ_bar_proxy_B1 ./ (2U * N),
+    ΦP_bar_proxy_B1 ./ (2U * N)
+end
+
+"""
+Calculates 𝜱'(A₁)(ℓ) ,𝜱'(B₁)(ℓ), 𝜱'(A`₁)(ℓ), 
+returning the three vectors with ℓ=1,…,N_τ
+Written for Nϕ=1.
+"""
+@inline function calc_ΦP_bars_gd4only(mc::DQMC, ϕ_field::Array)
+    U = mc.model.U
+    N_slices = mc.parameters.slices
+    lat = mc.model.l
+    L = lat.Ls[1]
+    N = length(lat)
+    Bsrcdir2trg = lat[:Bravais_srcdir2trg]
+    gd_s_4 = get!(lat, :gd_s_4, compute_g_d_4)
+
+    ΦP_bar_A1 = zeros(Float64, N_slices)
+    ΦP_bar_B1 = zeros(Float64, N_slices)
+    ΦP_bar_A1P = zeros(Float64, N_slices)
+    temp_vec = Vector{Float64}(undef, N_slices)
+
+    @inbounds @fastmath for (d_index, d_vec, g_d) in gd_s_4
+        gd_A1 = g_d * ((-1)^d_vec[1] + (-1)^d_vec[2])
+        gd_B1 = g_d * ((-1)^d_vec[1] - (-1)^d_vec[2])
+
+        for k in axes(ϕ_field, 2)
+            ky, kx = fldmod1(k, L)
+            kPd = Bsrcdir2trg[k, d_index]           # k + d  
+            fill_with_product!(temp_vec, view(ϕ_field, 1, kPd, :), view(ϕ_field, 1, k, :))
+
+            ΦP_bar_A1 += temp_vec * gd_A1
+            ΦP_bar_B1 += temp_vec * gd_B1
+            ΦP_bar_A1P += temp_vec * (-1)^(kx + ky) * gd_A1
+
+        end
+    end
+    return ΦP_bar_A1 ./ (8U * N), ΦP_bar_B1 ./ (8U * N), ΦP_bar_A1P ./ (8U * N)
+end
+
+
+function fill_with_product!(temp_vec::T, v1, v2) where {T<:Vector{Float64}}
+    temp_vec .= v1 .* v2
+    return nothing
+end
+function fill_with_product!(temp_vec::T, v1::T, v2::T) where {T<:Vector{Float64}}
+    temp_vec .= v1 .* v2
+    return nothing
+end
 """
 `calc_ϕQ1Q2(mc ::DQMC, ϕ_field::Array)` computes the Fourier transform 
 ϕ[Q=(π,0)] (τ) and ϕ[Q=(0,π)] (τ) returning it as an array ζ=1,..,2*Nϕ and ℓ=1,..,Nτ 
