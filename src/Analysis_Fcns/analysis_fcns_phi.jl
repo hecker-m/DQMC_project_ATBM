@@ -137,27 +137,42 @@ function calc_observables!(binner_array::Array, mc::DQMC, ϕ_field::Array, ::Val
         ϕQ1Q2_bar[ζ] = mean(ϕQ1Q2[ζ, :])
     end
 
-    # ΦA1_gd4, ΦB1_gd4, ΦA1p_gd4, ΦA1_gd2, ΦB1_gd2, ΦA1p_gd2, Φ_proxy_A1, ΦP_proxy_A1, Φ_proxy_B1, ΦP_proxy_B1 = calc_ΦP_bars(mc, ϕ_field)
+    # ΦA1_gd4, ΦB1_gd4, ΦA1p_gd4, ΦA1_gd2, ΦB1_gd2, ΦA1p_gd2, Φ_bond_A1, Φ_bond_A1_b, Φ_bond_B1, Φ_bond_B1_b = calc_ΦP_bars(mc, ϕ_field)
 
     dict_Φbars = Dict{String,Vector}([("ΦA1_gd4", zeros(Float64, Nτ)), ("ΦB1_gd4", zeros(Float64, Nτ)),
         ("ΦA1p_gd4", zeros(Float64, Nτ)), ("ΦA1_gd2", zeros(Float64, Nτ)), ("ΦB1_gd2", zeros(Float64, Nτ)),
-        ("ΦA1p_gd2", zeros(Float64, Nτ)), ("Φ_proxy_A1", zeros(Float64, Nτ)), ("ΦP_proxy_A1", zeros(Float64, Nτ)),
-        ("Φ_proxy_B1", zeros(Float64, Nτ)), ("ΦP_proxy_B1", zeros(Float64, Nτ))]
+        ("ΦA1p_gd2", zeros(Float64, Nτ)), ("Φ_bond_A1_a", zeros(Float64, Nτ)), ("Φ_bond_A1_b", zeros(Float64, Nτ)),
+        ("Φ_bond_B1_a", zeros(Float64, Nτ)), ("Φ_bond_B1_b", zeros(Float64, Nτ)),
+        ("Φ_nem_BZ2_B1_a", zeros(Float64, Nτ)), ("Φ_nem_BZ2_B1_b", zeros(Float64, Nτ)),
+        ("Φ_nem_BZ2_A1_a", zeros(Float64, Nτ)), ("Φ_nem_BZ2_A1_b", zeros(Float64, Nτ)),
+        ("Φ_nem_BZ4_B1_a", zeros(Float64, Nτ)), ("Φ_nem_BZ4_B1_b", zeros(Float64, Nτ)),
+        ("Φ_nem_BZ4_A1_a", zeros(Float64, Nτ)), ("Φ_nem_BZ4_A1_b", zeros(Float64, Nτ))
+    ]
     )
     calc_ΦP_bars!(dict_Φbars, mc, ϕ_field)
 
-    ΦA1_gd4 = dict_Φbars["ΦA1_gd4"]
-    ΦB1_gd4 = dict_Φbars["ΦB1_gd4"]
-    ΦA1p_gd4 = dict_Φbars["ΦA1p_gd4"]
-    ΦA1_gd2 = dict_Φbars["ΦA1_gd2"]
-    ΦB1_gd2 = dict_Φbars["ΦB1_gd2"]
-    ΦA1p_gd2 = dict_Φbars["ΦA1p_gd2"]
-    Φ_proxy_A1 = dict_Φbars["Φ_proxy_A1"]
-    ΦP_proxy_A1 = dict_Φbars["ΦP_proxy_A1"]
-    Φ_proxy_B1 = dict_Φbars["Φ_proxy_B1"]
-    ΦP_proxy_B1 = dict_Φbars["ΦP_proxy_B1"]
+    ΦA1_BZ4 = dict_Φbars["ΦA1_gd4"]
+    ΦB1_BZ4 = dict_Φbars["ΦB1_gd4"]
+    ΦA1p_BZ4 = dict_Φbars["ΦA1p_gd4"]
 
+    ΦA1_BZ2 = dict_Φbars["ΦA1_gd2"]
+    ΦB1_BZ2 = dict_Φbars["ΦB1_gd2"]
+    ΦA1p_BZ2 = dict_Φbars["ΦA1p_gd2"]
 
+    Φ_bond_A1_a = dict_Φbars["Φ_bond_A1_a"]
+    Φ_bond_A1_b = dict_Φbars["Φ_bond_A1_b"]
+    Φ_bond_B1_a = dict_Φbars["Φ_bond_B1_a"]
+    Φ_bond_B1_b = dict_Φbars["Φ_bond_B1_b"]
+
+    Φ_nem_BZ2_B1_a = dict_Φbars["Φ_nem_BZ2_B1_a"]
+    Φ_nem_BZ2_B1_b = dict_Φbars["Φ_nem_BZ2_B1_b"]
+    Φ_nem_BZ2_A1_a = dict_Φbars["Φ_nem_BZ2_A1_a"]
+    Φ_nem_BZ2_A1_b = dict_Φbars["Φ_nem_BZ2_A1_b"]
+
+    Φ_nem_BZ4_B1_a = dict_Φbars["Φ_nem_BZ4_B1_a"]
+    Φ_nem_BZ4_B1_b = dict_Φbars["Φ_nem_BZ4_B1_b"]
+    Φ_nem_BZ4_A1_a = dict_Φbars["Φ_nem_BZ4_A1_a"]
+    Φ_nem_BZ4_A1_b = dict_Φbars["Φ_nem_BZ4_A1_b"]
 
 
     S_spin = mean(ΦA1) - Nϕ / (N * U * δτ)
@@ -212,41 +227,61 @@ function calc_observables!(binner_array::Array, mc::DQMC, ϕ_field::Array, ::Val
 
 
 
-    push!(binner_array[19], mean(abs.(ΦB1_gd4)))
-    push!(binner_array[20], compute_S_bil_XX(mc, ΦB1_gd4, ΦA1_gd4; R=4))
-    push!(binner_array[21], compute_χ_bil_XX(mc, ΦB1_gd4, ΦA1_gd4; R=4))
-    push!(binner_array[22], compute_S2_bil_XX(mc, ΦB1_gd4, ΦA1_gd4; R=4))
-
-    push!(binner_array[23], mean(abs.(ΦA1p_gd4)))
-    push!(binner_array[24], compute_S_bil_XX(mc, ΦA1p_gd4, ΦA1_gd4; R=4))
-    push!(binner_array[25], compute_χ_bil_XX(mc, ΦA1p_gd4, ΦA1_gd4; R=4))
-    push!(binner_array[26], compute_S2_bil_XX(mc, ΦA1p_gd4, ΦA1_gd4; R=4))
-
-    push!(binner_array[27], mean(ΦA1p_gd4))
-    push!(binner_array[28], mean(ΦB1_gd4))
+    # push!(binner_array[19], mean(abs.(ΦB1_BZ4)))
+    # push!(binner_array[20], compute_S_bil_XX(mc, ΦB1_BZ4, ΦA1_BZ4; R=4))
+    # push!(binner_array[21], compute_χ_bil_XX(mc, ΦB1_BZ4, ΦA1_BZ4; R=4))
+    # push!(binner_array[22], compute_S2_bil_XX(mc, ΦB1_BZ4, ΦA1_BZ4; R=4))
+    push!(binner_array[19], mean(abs.(Φ_nem_BZ4_B1_a)))
+    push!(binner_array[20], compute_S_nem(mc, Φ_nem_BZ4_B1_a, Φ_nem_BZ4_A1_a; δt_A1=δ0_BZ4_A1_a(mc.model.l)))
+    push!(binner_array[21], compute_χ_nem(mc, Φ_nem_BZ4_B1_a, Φ_nem_BZ4_A1_a; δt_A1=δ0_BZ4_A1_a(mc.model.l)))
+    push!(binner_array[22], compute_S2_nem(mc, Φ_nem_BZ4_B1_a, Φ_nem_BZ4_A1_a, Φ_nem_BZ4_B1_b, Φ_nem_BZ4_A1_b;
+        δt_A1=δ0_BZ4_A1_a(mc.model.l), δt_A1_b=δ0_BZ4_A1_b(mc.model.l), δt_B1_b=δ0_BZ4_B1_b(mc.model.l))
+    )
 
 
+    push!(binner_array[23], mean(abs.(ΦA1p_BZ4)))
+    push!(binner_array[24], compute_S_bil_XX(mc, ΦA1p_BZ4, ΦA1_BZ4; R=4))
+    push!(binner_array[25], compute_χ_bil_XX(mc, ΦA1p_BZ4, ΦA1_BZ4; R=4))
+    push!(binner_array[26], compute_S2_bil_XX(mc, ΦA1p_BZ4, ΦA1_BZ4; R=4))
 
-    push!(binner_array[29], mean(abs.(ΦB1_gd2)))
-    push!(binner_array[30], compute_S_bil_XX(mc, ΦB1_gd2, ΦA1_gd2; R=2))
-    push!(binner_array[31], compute_χ_bil_XX(mc, ΦB1_gd2, ΦA1_gd2; R=2))
-    push!(binner_array[32], compute_S2_bil_XX(mc, ΦB1_gd2, ΦA1_gd2; R=2))
+    push!(binner_array[27], mean(ΦA1p_BZ4))
+    # push!(binner_array[28], mean(ΦB1_BZ4))
+    push!(binner_array[28], mean(Φ_nem_BZ4_B1_a))
 
-    push!(binner_array[33], mean(abs.(ΦA1p_gd2)))
-    push!(binner_array[34], compute_S_bil_XX(mc, ΦA1p_gd2, ΦA1_gd2; R=2))
-    push!(binner_array[35], compute_χ_bil_XX(mc, ΦA1p_gd2, ΦA1_gd2; R=2))
-    push!(binner_array[36], compute_S2_bil_XX(mc, ΦA1p_gd2, ΦA1_gd2; R=2))
 
-    push!(binner_array[37], mean(ΦA1p_gd2))
-    push!(binner_array[38], mean(ΦB1_gd2))
+
+    # push!(binner_array[29], mean(abs.(ΦB1_BZ2)))
+    # push!(binner_array[30], compute_S_bil_XX(mc, ΦB1_BZ2, ΦA1_BZ2; R=2))
+    # push!(binner_array[31], compute_χ_bil_XX(mc, ΦB1_BZ2, ΦA1_BZ2; R=2))
+    # push!(binner_array[32], compute_S2_bil_XX(mc, ΦB1_BZ2, ΦA1_BZ2; R=2))
+    push!(binner_array[29], mean(abs.(Φ_nem_BZ2_B1_a)))
+    push!(binner_array[30], compute_S_nem(mc, Φ_nem_BZ2_B1_a, Φ_nem_BZ2_A1_a; δt_A1=δ0_BZ2_A1_a(mc.model.l)))
+    push!(binner_array[31], compute_χ_nem(mc, Φ_nem_BZ2_B1_a, Φ_nem_BZ2_A1_a; δt_A1=δ0_BZ2_A1_a(mc.model.l)))
+    push!(binner_array[32], compute_S2_nem(mc, Φ_nem_BZ2_B1_a, Φ_nem_BZ2_A1_a, Φ_nem_BZ2_B1_b, Φ_nem_BZ2_A1_b;
+        δt_A1=δ0_BZ2_A1_a(mc.model.l), δt_A1_b=δ0_BZ2_A1_b(mc.model.l), δt_B1_b=δ0_BZ2_B1_b(mc.model.l))
+    )
+
+    push!(binner_array[33], mean(abs.(ΦA1p_BZ2)))
+    push!(binner_array[34], compute_S_bil_XX(mc, ΦA1p_BZ2, ΦA1_BZ2; R=2))
+    push!(binner_array[35], compute_χ_bil_XX(mc, ΦA1p_BZ2, ΦA1_BZ2; R=2))
+    push!(binner_array[36], compute_S2_bil_XX(mc, ΦA1p_BZ2, ΦA1_BZ2; R=2))
+
+    push!(binner_array[37], mean(ΦA1p_BZ2))
+    # push!(binner_array[38], mean(ΦB1_BZ2))
+    push!(binner_array[38], mean(Φ_nem_BZ2_B1_a))
 
     #We redefined the original OP by a factor of 1/2. (And were too lazy to adjust all equations.)
-    push!(binner_array[39], mean(abs.(Φ_proxy_B1)) / 2)
-    push!(binner_array[40], compute_S_bil_XX(mc, Φ_proxy_B1, Φ_proxy_A1; R=2) / (2^2))
-    push!(binner_array[41], compute_χ_bil_XX(mc, Φ_proxy_B1, Φ_proxy_A1; R=2) / (2^2))
-    push!(binner_array[42], compute_S2_nem_proxy(mc, Φ_proxy_B1, Φ_proxy_A1, ΦP_proxy_B1, ΦP_proxy_A1; R=2) / (2^4))
+    push!(binner_array[39], mean(abs.(Φ_bond_B1_a)) / 2)
+    # push!(binner_array[40], compute_S_bil_XX(mc, Φ_bond_B1, Φ_bond_A1; R=2) / (2^2))
+    # push!(binner_array[41], compute_χ_bil_XX(mc, Φ_bond_B1, Φ_bond_A1; R=2) / (2^2))
+    # push!(binner_array[42], compute_S2_nem_proxy(mc, Φ_bond_B1, Φ_bond_A1, ΦP_bond_B1, ΦP_bond_A1; R=2) / (2^4))
+    push!(binner_array[40], compute_S_nem(mc, Φ_bond_B1_a, Φ_bond_A1_a; δt_A1=δ0_bond_A1_a(mc.model.l)) / (2^2))
+    push!(binner_array[41], compute_χ_nem(mc, Φ_bond_B1_a, Φ_bond_A1_a; δt_A1=δ0_bond_A1_a(mc.model.l)) / (2^2))
+    push!(binner_array[42], compute_S2_nem(mc, Φ_bond_B1_a, Φ_bond_A1_a, Φ_bond_B1_b, Φ_bond_A1_b;
+        δt_A1=δ0_bond_A1_a(mc.model.l), δt_A1_b=δ0_bond_A1_b(mc.model.l), δt_B1_b=δ0_bond_B1_b(mc.model.l)) / (2^4)
+    )
 
-    push!(binner_array[43], mean(Φ_proxy_B1) / 2)
+    push!(binner_array[43], mean(Φ_bond_B1_a) / 2)
 
     if Nϕ > 1
         DA1_ΦB1p = Vector{Float64}(undef, Nτ)
@@ -369,13 +404,63 @@ end
             12 * (1 / R + 2 / N) / (N^2 * δτ^3 * U^3) * mean(Φ_A1) + 3 * (1 / R + 2 / N) / (R * N^2 * δτ^4 * U^4)
     )
 end
+"""
+compute_χ_nem(mc, Φ_B1_a, Φ_A1_a [;δt_A1] )
+
+This function computes the nematic susceptibility under the assumption that it was derived 
+from the generic order parameter that contains δ^B₁_{i,j}, Φ_A1_a involves 
+δ^A₁_{i,k} = ∑ⱼ δ^B₁_{i,j} δ^B₁_{j,k}, and δt_A1= ∑ᵢ δ^A₁_{i,i}.
+"""
+@inline function compute_χ_nem(mc::DQMC, Φ_B1_a::Array, Φ_A1_a::Array; δt_A1=length(mc.model.l))
+    U = mc.model.U
+    N = length(mc.model.l)
+    δτ = mc.parameters.delta_tau
+    β = mc.parameters.beta
+    return β * mean(Φ_B1_a)^2 - 2 / (N * U) * mean(Φ_A1_a) + (δt_A1 / 2) / (N^2 * δτ * U^2)
+end
+"""
+compute_S_nem(mc, Φ_B1_a, Φ_A1_a [;δt_A1] )
+
+This function computes the nematic susceptibility under the assumption that it was derived 
+from the generic order parameter that contains δ^B₁_{i,j}, Φ_A1_a involves 
+δ^A₁_{i,k} = ∑ⱼ δ^B₁_{i,j} δ^B₁_{j,k}, and δt_A1= ∑ᵢ δ^A₁_{i,i}.
+"""
+@inline function compute_S_nem(mc::DQMC, Φ_B1_a::Array, Φ_A1_a::Array; δt_A1=length(mc.model.l))
+    U = mc.model.U
+    N = length(mc.model.l)
+    δτ = mc.parameters.delta_tau
+    return (mean(Φ_B1_a .^ 2) - 2 / (N * δτ * U) * mean(Φ_A1_a) + (δt_A1 / 2) / (N^2 * δτ^2 * U^2)
+    )
+end
+"""
+compute_χ_nem(mc, Φ_B1_a, Φ_A1_a [;δt_A1] )
+
+This function computes the nematic susceptibility under the assumption that it was derived 
+from the generic order parameter that contains δ^B₁_{i,j}, Φ_A1_a involves 
+δ^A₁_{i,k} = ∑ⱼ δ^B₁_{i,j} δ^B₁_{j,k}, and δt_A1= ∑ᵢ δ^A₁_{i,i}.
+
+Analogously, Φ_B1_b, Φ_A1_b, as well as δt_A1_b, δt_B1_b contain the higher-order pendants.
+"""
+@inline function compute_S2_nem(mc::DQMC, Φ_B1_a::Array, Φ_A1_a::Array, Φ_B1_b::Array, Φ_A1_b::Array;
+    δt_A1=length(mc.model.l), δt_A1_b=length(mc.model.l), δt_B1_b=0
+)
+    U = mc.model.U
+    N = length(mc.model.l)
+    δτ = mc.parameters.delta_tau
+    return (mean(Φ_B1_a .^ 4) - 12 / (N * δτ * U) * mean(Φ_B1_a .* Φ_B1_a .* Φ_A1_a) +
+            (3 * δt_A1) / (N^2 * δτ^2 * U^2) * mean(Φ_B1_a .* Φ_B1_a) + 24 / (N^2 * δτ^2 * U^2) * mean(Φ_B1_a .* Φ_B1_b)
+            + 12 / (N^2 * δτ^2 * U^2) * mean(Φ_A1_a .* Φ_A1_a) - 4 * δt_B1_b / (N^3 * δτ^3 * U^3) * mean(Φ_B1_a) -
+            (6 * δt_A1) / (N^3 * δτ^3 * U^3) * mean(Φ_A1_a) - 24 / (N^3 * δτ^3 * U^3) * mean(Φ_A1_b)
+            + (3 / 4) * δt_A1^2 / (N^4 * δτ^4 * U^4) + (3 * δt_A1_b) / (N^4 * δτ^4 * U^4)
+    )
+end
 
 @inline function compute_S2_nem_proxy(mc::DQMC, Φ_XX::Array, Φ_A1::Array, ΦP_XX::Array, ΦP_A1::Array; R::Real=2)
     U = mc.model.U
     N = length(mc.model.l)
     δτ = mc.parameters.delta_tau
     return (mean(Φ_XX .^ 4) - 12 / (N * δτ * U) * mean(Φ_XX .* Φ_XX .* Φ_A1) +
-            (6 / R) / (N * δτ^2 * U^2) * mean(Φ_XX .* Φ_XX) + 30 / (N^2 * δτ^2 * U^2) * mean(Φ_XX .* ΦP_XX)
+            (6 / R) / (N * δτ^2 * U^2) * mean(Φ_XX .* Φ_XX) + 24 / (N^2 * δτ^2 * U^2) * mean(Φ_XX .* ΦP_XX)
             + 12 / (N^2 * δτ^2 * U^2) * mean(Φ_A1 .* Φ_A1) -
             (12 / R) / (N^2 * δτ^3 * U^3) * mean(Φ_A1) - 24 / (N^3 * δτ^3 * U^3) * mean(ΦP_A1)
             + (3 / R^2) / (N^2 * δτ^4 * U^4) + (27 / 4) / (N^3 * δτ^4 * U^4)
@@ -404,10 +489,10 @@ end
 end
 @inline function δP_B1_function(lat::Lattice, d::Int; dict::Dict=make_dirs_dict(lat))
     return -(9 / 8 * (I[d, dict[:P1a₁]] + I[d, dict[:M1a₁]] - I[d, dict[:P1a₂]] - I[d, dict[:M1a₂]])
-            + 1 / 8 * (I[d, dict[:P3a₁]] + I[d, dict[:M3a₁]] - I[d, dict[:P3a₂]] - I[d, dict[:M3a₂]])
-            + 3 / 8 * (I[d, dict[:P1a₁M2a₂]] + I[d, dict[:P1a₁P2a₂]] -
-                       I[d, dict[:P2a₁P1a₂]] - I[d, dict[:P2a₁M1a₂]] + I[d, dict[:M1a₁M2a₂]] +
-                       I[d, dict[:M1a₁P2a₂]] - I[d, dict[:M2a₁P1a₂]] - I[d, dict[:M2a₁M1a₂]])
+             + 1 / 8 * (I[d, dict[:P3a₁]] + I[d, dict[:M3a₁]] - I[d, dict[:P3a₂]] - I[d, dict[:M3a₂]])
+             + 3 / 8 * (I[d, dict[:P1a₁M2a₂]] + I[d, dict[:P1a₁P2a₂]] -
+                        I[d, dict[:P2a₁P1a₂]] - I[d, dict[:P2a₁M1a₂]] + I[d, dict[:M1a₁M2a₂]] +
+                        I[d, dict[:M1a₁P2a₂]] - I[d, dict[:M2a₁P1a₂]] - I[d, dict[:M2a₁M1a₂]])
     )
 end
 @inline function δ_A1_function(lat::Lattice, d::Int; dict::Dict=make_dirs_dict(lat))
@@ -476,7 +561,7 @@ function make_dirs_dict(lat::Lattice)
     return dir_dict
 end
 
-function compute_δ(lat::Lattice; δ_function::Function=δ_B1_function,
+function compute_δ_bond(lat::Lattice; δ_function::Function=δ_B1_function,
     full_list=false, atol=1e-13)
     L = lat.Ls[1]
     dirs_Bravais = directions(Bravais(lat))
@@ -484,35 +569,137 @@ function compute_δ(lat::Lattice; δ_function::Function=δ_B1_function,
     dirs_dict = make_dirs_dict(lat)
     δ_s = Vector{Tuple}()
     sizehint!(δ_s, length(lat))
-    for (idx, d) in enumerate(dirs_Bravais)
-        δ_val = δ_function(lat, idx; dict=dirs_dict)
+    for (d_idx, d) in enumerate(dirs_Bravais)
+        δ_val = δ_function(lat, d_idx; dict=dirs_dict)
 
         if full_list && isapprox(δ_val, 0.0, atol=atol)
-            push!(δ_s, (idx, d, 0.0))
+            push!(δ_s, (d_idx, d, 0.0))
         end
         if !isapprox(δ_val, 0.0, atol=atol)
-            push!(δ_s, (idx, d, δ_val))
+            push!(δ_s, (d_idx, d, δ_val))
         end
     end
     return δ_s
 end
 
-compute_δ_B1(lat::Lattice) = compute_δ(lat; δ_function=δ_B1_function, full_list=false)
-compute_δ_B1_full(lat::Lattice) = compute_δ(lat; δ_function=δ_B1_function, full_list=true)
-compute_δP_B1(lat::Lattice) = compute_δ(lat; δ_function=δP_B1_function, full_list=false)
-compute_δP_B1_full(lat::Lattice) = compute_δ(lat; δ_function=δP_B1_function, full_list=true)
-compute_δ_A1(lat::Lattice) = compute_δ(lat; δ_function=δ_A1_function, full_list=false)
-compute_δ_A1_full(lat::Lattice) = compute_δ(lat; δ_function=δ_A1_function, full_list=true)
-compute_δP_A1(lat::Lattice) = compute_δ(lat; δ_function=δP_A1_function, full_list=false)
-compute_δP_A1_full(lat::Lattice) = compute_δ(lat; δ_function=δP_A1_function, full_list=true)
+compute_δ_bond_B1_a(lat::Lattice) = compute_δ_bond(lat; δ_function=δ_B1_function, full_list=false)
+compute_δ_bond_B1_a_full(lat::Lattice) = compute_δ_bond(lat; δ_function=δ_B1_function, full_list=true)
+compute_δ_bond_B1_b(lat::Lattice) = compute_δ_bond(lat; δ_function=δP_B1_function, full_list=false)
+compute_δ_bond_B1_b_full(lat::Lattice) = compute_δ_bond(lat; δ_function=δP_B1_function, full_list=true)
+compute_δ_bond_A1_a(lat::Lattice) = compute_δ_bond(lat; δ_function=δ_A1_function, full_list=false)
+compute_δ_bond_A1_a_full(lat::Lattice) = compute_δ_bond(lat; δ_function=δ_A1_function, full_list=true)
+compute_δ_bond_A1_b(lat::Lattice) = compute_δ_bond(lat; δ_function=δP_A1_function, full_list=false)
+compute_δ_bond_A1_b_full(lat::Lattice) = compute_δ_bond(lat; δ_function=δP_A1_function, full_list=true)
 
+function BZ2_fcn(lat::Lattice; full_list=false)
+    if full_list
+        return (2, get!(lat, :gd_BZ2, compute_gd_BZ2_full))
+    else
+        return (2, get!(lat, :gd_BZ2, compute_gd_BZ2))
+    end
+end
+function BZ4_fcn(lat::Lattice; full_list=false)
+    if full_list
+        return (4, get!(lat, :gd_BZ4, compute_gd_BZ4_full))
+    else
+        return (4, get!(lat, :gd_BZ4, compute_gd_BZ4))
+    end
+end
 
+function compute_δ_BZx_B1_a(lat::Lattice; BZx_fcn=BZ2_fcn, full_list=false, atol=1e-13)
 
+    R, gd_s = BZx_fcn(lat; full_list=full_list)
 
-compute_g_d_4(lat::Lattice) = compute_g_d(lat; Qs=[[0, 0], [π, 0], [0, π], [π, π]])
-compute_g_d_2(lat::Lattice) = compute_g_d(lat; Qs=[[π, 0], [0, π]])
-compute_g_d_4_full(lat::Lattice) = compute_g_d(lat; Qs=[[0, 0], [π, 0], [0, π], [π, π]], full_list=true)
-compute_g_d_2_full(lat::Lattice) = compute_g_d(lat; Qs=[[π, 0], [0, π]], full_list=true)
+    δ_s = Vector{Tuple}()
+    sizehint!(δ_s, length(lat))
+
+    for (d_idx, d_vec, gd) in gd_s
+
+        δ_val = 1 / R * gd * ((-1)^d_vec[1] - (-1)^d_vec[2])
+
+        if full_list && isapprox(δ_val, 0.0, atol=atol)
+            push!(δ_s, (d_idx, d_vec, 0.0))
+        end
+        if !isapprox(δ_val, 0.0, atol=atol)
+            push!(δ_s, (d_idx, d_vec, δ_val))
+        end
+    end
+    return δ_s
+end
+
+compute_δ_BZ2_B1_a_full(lat::Lattice) = compute_δ_BZx_B1_a(lat; BZx_fcn=BZ2_fcn, full_list=true)
+compute_δ_BZ2_B1_a(lat::Lattice) = compute_δ_BZx_B1_a(lat; BZx_fcn=BZ2_fcn)
+compute_δ_BZ4_B1_a_full(lat::Lattice) = compute_δ_BZx_B1_a(lat; BZx_fcn=BZ4_fcn, full_list=true)
+compute_δ_BZ4_B1_a(lat::Lattice) = compute_δ_BZx_B1_a(lat; BZx_fcn=BZ4_fcn)
+
+function compute_δ1_δ2_convolution(lat::Lattice; atol=1e-13,full_list=true,
+    δ1_s=get!(lat, :δ_BZ2_B1_a, compute_δ_BZ2_B1_a_full),
+    δ2_s=get!(lat, :δ_BZ2_B1_a, compute_δ_BZ2_B1_a_full)
+)
+    Bdirdir2dir = get!(lat, :dirdir2dir, Bravais_dirdir2dir)
+    δ_s = Vector{Tuple}()
+    sizehint!(δ_s, length(lat))
+
+    for (d1_idx, d1_vec, δ1_val) in δ1_s
+        temp = zero(typeof(δ1_val))
+
+        for (d2_idx, d2_vec, δ2_val) in δ2_s
+            d3_idx = Bdirdir2dir[d1_idx, d2_idx]
+            δ1_at_d3_val = δ1_s[d3_idx][3]
+            temp += δ2_val * δ1_at_d3_val
+        end
+        if full_list && isapprox(temp, 0.0, atol=atol)
+            push!(δ_s, (d1_idx, d1_vec, 0.0))
+        end
+        if !isapprox(temp, 0.0, atol=atol)
+            push!(δ_s, (d1_idx, d1_vec, temp))
+        end
+    end
+    return δ_s
+end
+
+function compute_δ_BZ2_A1_a_full(lat::Lattice)
+    return compute_δ1_δ2_convolution(lat; full_list=true,
+        δ1_s=get!(lat, :δ_BZ2_B1_a, compute_δ_BZ2_B1_a_full),
+        δ2_s=get!(lat, :δ_BZ2_B1_a, compute_δ_BZ2_B1_a_full)
+    )
+end
+function compute_δ_BZ2_B1_b_full(lat::Lattice)
+    return compute_δ1_δ2_convolution(lat; full_list=true,
+        δ1_s=get!(lat, :δ_BZ2_A1_a, compute_δ_BZ2_A1_a_full),
+        δ2_s=get!(lat, :δ_BZ2_B1_a, compute_δ_BZ2_B1_a_full)
+    )
+end
+function compute_δ_BZ2_A1_b_full(lat::Lattice)
+    return compute_δ1_δ2_convolution(lat; full_list=true,
+        δ1_s=get!(lat, :δ_BZ2_B1_b, compute_δ_BZ2_B1_b_full),
+        δ2_s=get!(lat, :δ_BZ2_B1_a, compute_δ_BZ2_B1_a_full)
+    )
+end
+
+function compute_δ_BZ4_A1_a_full(lat::Lattice)
+    return compute_δ1_δ2_convolution(lat; full_list=true,
+        δ1_s=get!(lat, :δ_BZ4_B1_a, compute_δ_BZ4_B1_a_full),
+        δ2_s=get!(lat, :δ_BZ4_B1_a, compute_δ_BZ4_B1_a_full)
+    )
+end
+function compute_δ_BZ4_B1_b_full(lat::Lattice)
+    return compute_δ1_δ2_convolution(lat; full_list=true,
+        δ1_s=get!(lat, :δ_BZ4_A1_a, compute_δ_BZ4_A1_a_full),
+        δ2_s=get!(lat, :δ_BZ4_B1_a, compute_δ_BZ4_B1_a_full)
+    )
+end
+function compute_δ_BZ4_A1_b_full(lat::Lattice)
+    return compute_δ1_δ2_convolution(lat; full_list=true,
+        δ1_s=get!(lat, :δ_BZ4_B1_b, compute_δ_BZ4_B1_b_full),
+        δ2_s=get!(lat, :δ_BZ4_B1_a, compute_δ_BZ4_B1_a_full)
+    )
+end
+
+compute_gd_BZ4(lat::Lattice) = compute_g_d(lat; Qs=[[0, 0], [π, 0], [0, π], [π, π]])
+compute_gd_BZ2(lat::Lattice) = compute_g_d(lat; Qs=[[π, 0], [0, π]])
+compute_gd_BZ4_full(lat::Lattice) = compute_g_d(lat; Qs=[[0, 0], [π, 0], [0, π], [π, π]], full_list=true)
+compute_gd_BZ2_full(lat::Lattice) = compute_g_d(lat; Qs=[[π, 0], [0, π]], full_list=true)
 
 """
     compute_g_d(lat::Lattice, d::Vector)
@@ -536,7 +723,7 @@ function compute_g_d(lat::Lattice; Qs=[[0, 0], [π, 0], [0, π], [π, π]],
 
     gd_s = Vector{Tuple}()
     sizehint!(gd_s, length(lat))
-    for (idx, d) in enumerate(dirs_Bravais)
+    for (d_idx, d) in enumerate(dirs_Bravais)
 
         gd = zero(ComplexF64)
         for (weight, p) in p_vals
@@ -545,10 +732,10 @@ function compute_g_d(lat::Lattice; Qs=[[0, 0], [π, 0], [0, π], [π, π]],
         @assert isapprox(imag(gd), 0.0, atol=atol) "Imaginary part of g(d) is not zero! It is $(imag(gd)) for d=$(d)"
 
         if full_list && isapprox(real(gd), 0.0, atol=atol)
-            push!(gd_s, (idx, d, 0))
+            push!(gd_s, (d_idx, d, 0))
         end
         if !isapprox(real(gd), 0.0, atol=atol)
-            push!(gd_s, (idx, d, real(gd) / (L^2 / R)))
+            push!(gd_s, (d_idx, d, real(gd) / (L^2 / R)))
         end
     end
 
@@ -559,7 +746,19 @@ end
     p_vals, dict = p_vals_BZ4(lat; Qs=Qs)
     return dict
 end
+"""
+`p_vals_BZ4(lat, [; Qs])`
 
+Takes the reciprocal lattice points and associates them to the closet 
+vector given in `Qs` (modulo reciprocal lattice vectors). 
+For points which are equally far from `n` such vectors a 
+weighting factor `1/n` is added.  
+
+Returns the tupel `(p_vals, dict)` with the reciprocal lattice points `p_vals`, 
+and a dictionary `dict` containing the closest lattice points 
+for each vector in `Qs`.
+For symmetrical setups, all dictionary entries are identical.
+"""
 @inline function p_vals_BZ4(lat::Lattice{2}; Qs=[[0, 0], [π, 0], [0, π], [π, π]])
     b1, b2 = MonteCarlo.reciprocal_vectors(lat)
     L1, L2 = lat.Ls
@@ -640,7 +839,7 @@ returning the three vectors with ℓ=1,…,N_τ
     L = lat.Ls[1]
     N = length(lat)
     Bsrcdir2trg = lat[:Bravais_srcdir2trg]
-    gd_s = get!(lat, :gd_s_4, compute_g_d_4)
+    gd_s = get!(lat, :gd_BZ4, compute_gd_BZ4)
 
     ΦP_bar_A1 = zeros(Float64, N_slices)
     ΦP_bar_B1 = zeros(Float64, N_slices)
@@ -668,7 +867,17 @@ end
 
 
 
+δ0_bond_A1_a(lat::Lattice) = length(lat) * get!(lat, :δ_bond_A1_a, compute_δ_bond_A1_a_full)[1][3]
+δ0_bond_B1_b(lat::Lattice) = length(lat) * get!(lat, :δ_bond_B1_b, compute_δ_bond_B1_b_full)[1][3]
+δ0_bond_A1_b(lat::Lattice) = length(lat) * get!(lat, :δ_bond_A1_b, compute_δ_bond_A1_b_full)[1][3]
 
+δ0_BZ2_A1_a(lat::Lattice) = length(lat) * get!(lat, :δ_BZ2_A1_a, compute_δ_BZ2_A1_a_full)[1][3]
+δ0_BZ2_B1_b(lat::Lattice) = length(lat) * get!(lat, :δ_BZ2_B1_b, compute_δ_BZ2_B1_b_full)[1][3]
+δ0_BZ2_A1_b(lat::Lattice) = length(lat) * get!(lat, :δ_BZ2_A1_b, compute_δ_BZ2_A1_b_full)[1][3]
+
+δ0_BZ4_A1_a(lat::Lattice) = length(lat) * get!(lat, :δ_BZ4_A1_a, compute_δ_BZ4_A1_a_full)[1][3]
+δ0_BZ4_B1_b(lat::Lattice) = length(lat) * get!(lat, :δ_BZ4_B1_b, compute_δ_BZ4_B1_b_full)[1][3]
+δ0_BZ4_A1_b(lat::Lattice) = length(lat) * get!(lat, :δ_BZ4_A1_b, compute_δ_BZ4_A1_b_full)[1][3]
 """
 Calculates 𝜱'(A₁)(ℓ) ,𝜱'(B₁)(ℓ), 𝜱'(A`₁)(ℓ), 
 returning the three vectors with ℓ=1,…,N_τ
@@ -685,12 +894,24 @@ Written for Nϕ=1.
 
     Bsrcdir2trg = lat[:Bravais_srcdir2trg]
     #This function now only works for the compute_xxx_full versions of the below functions 
-    gd_s_4 = get!(lat, :gd_s_4, compute_g_d_4_full)
-    gd_s_2 = get!(lat, :gd_s_2, compute_g_d_2_full)
-    δ_A1_s = get!(lat, :δ_A1, compute_δ_A1_full)
-    δP_A1_s = get!(lat, :δP_A1, compute_δP_A1_full)
-    δ_B1_s = get!(lat, :δ_B1, compute_δ_B1_full)
-    δP_B1_s = get!(lat, :δP_B1, compute_δP_B1_full)
+    gd_BZ4_s = get!(lat, :gd_BZ4, compute_gd_BZ4_full)
+    gd_BZ2_s = get!(lat, :gd_BZ2, compute_gd_BZ2_full)
+
+    δ_bond_A1_a_s = get!(lat, :δ_bond_A1_a, compute_δ_bond_A1_a_full)
+    δ_bond_A1_b_s = get!(lat, :δ_bond_A1_b, compute_δ_bond_A1_b_full)
+    δ_bond_B1_a_s = get!(lat, :δ_bond_B1_a, compute_δ_bond_B1_a_full)
+    δ_bond_B1_b_s = get!(lat, :δ_bond_B1_b, compute_δ_bond_B1_b_full)
+
+    δ_BZ2_B1_a_s = get!(lat, :δ_BZ2_B1_a, compute_δ_BZ2_B1_a_full)
+    δ_BZ2_A1_a_s = get!(lat, :δ_BZ2_A1_a, compute_δ_BZ2_A1_a_full)
+    δ_BZ2_B1_b_s = get!(lat, :δ_BZ2_B1_b, compute_δ_BZ2_B1_b_full)
+    δ_BZ2_A1_b_s = get!(lat, :δ_BZ2_A1_b, compute_δ_BZ2_A1_b_full)
+
+    δ_BZ4_B1_a_s = get!(lat, :δ_BZ4_B1_a, compute_δ_BZ4_B1_a_full)
+    δ_BZ4_A1_a_s = get!(lat, :δ_BZ4_A1_a, compute_δ_BZ4_A1_a_full)
+    δ_BZ4_B1_b_s = get!(lat, :δ_BZ4_B1_b, compute_δ_BZ4_B1_b_full)
+    δ_BZ4_A1_b_s = get!(lat, :δ_BZ4_A1_b, compute_δ_BZ4_A1_b_full)
+    \
 
     Φ_bar_A1_4 = dict_Φbars["ΦA1_gd4"]
     Φ_bar_B1_4 = dict_Φbars["ΦB1_gd4"]
@@ -698,49 +919,77 @@ Written for Nϕ=1.
     Φ_bar_A1_2 = dict_Φbars["ΦA1_gd2"]
     Φ_bar_B1_2 = dict_Φbars["ΦB1_gd2"]
     Φ_bar_A1P_2 = dict_Φbars["ΦA1p_gd2"]
-    Φ_bar_proxy_A1 = dict_Φbars["Φ_proxy_A1"]
-    ΦP_bar_proxy_A1 = dict_Φbars["ΦP_proxy_A1"]
-    Φ_bar_proxy_B1 = dict_Φbars["Φ_proxy_B1"]
-    ΦP_bar_proxy_B1 = dict_Φbars["ΦP_proxy_B1"]
+
+    Φ_bond_A1_a = dict_Φbars["Φ_bond_A1_a"]
+    Φ_bond_A1_b = dict_Φbars["Φ_bond_A1_b"]
+    Φ_bond_B1_a = dict_Φbars["Φ_bond_B1_a"]
+    Φ_bond_B1_b = dict_Φbars["Φ_bond_B1_b"]
+
+    Φ_nem_BZ2_B1_a = dict_Φbars["Φ_nem_BZ2_B1_a"]
+    Φ_nem_BZ2_B1_b = dict_Φbars["Φ_nem_BZ2_B1_b"]
+    Φ_nem_BZ2_A1_a = dict_Φbars["Φ_nem_BZ2_A1_a"]
+    Φ_nem_BZ2_A1_b = dict_Φbars["Φ_nem_BZ2_A1_b"]
+
+    Φ_nem_BZ4_B1_a = dict_Φbars["Φ_nem_BZ4_B1_a"]
+    Φ_nem_BZ4_B1_b = dict_Φbars["Φ_nem_BZ4_B1_b"]
+    Φ_nem_BZ4_A1_a = dict_Φbars["Φ_nem_BZ4_A1_a"]
+    Φ_nem_BZ4_A1_b = dict_Φbars["Φ_nem_BZ4_A1_b"]
 
     temp_vec = Vector{Float64}(undef, N_slices)
     @inbounds @fastmath for (d_index, d_vec) in enumerate(dirs_Bravais)
 
         # @inbounds @fastmath for (d_index, d_vec, g_d) in gd_s_4
 
-        g_d4 = gd_s_4[d_index][3]
-        g_d2 = gd_s_2[d_index][3]
+        g_d4 = gd_BZ4_s[d_index][3]
+        g_d2 = gd_BZ2_s[d_index][3]
+        gd_A1_4 = g_d4 * ((-1)^d_vec[1] + (-1)^d_vec[2])
+        gd_B1_4 = g_d4 * ((-1)^d_vec[1] - (-1)^d_vec[2])
+        gd_A1_2 = g_d2 * ((-1)^d_vec[1] + (-1)^d_vec[2])
+        gd_B1_2 = g_d2 * ((-1)^d_vec[1] - (-1)^d_vec[2])
 
-        δ_A1 = δ_A1_s[d_index][3]
-        δP_A1 = δP_A1_s[d_index][3]
-        δ_B1 = δ_B1_s[d_index][3]
-        δP_B1 = δP_B1_s[d_index][3]
 
-        if !iszero(g_d4) || !iszero(g_d2) || !iszero(δ_A1) || !iszero(δP_A1) || !iszero(δ_B1) || !iszero(δP_B1)
-            gd_A1_4 = g_d4 * ((-1)^d_vec[1] + (-1)^d_vec[2])
-            gd_B1_4 = g_d4 * ((-1)^d_vec[1] - (-1)^d_vec[2])
-            gd_A1_2 = g_d2 * ((-1)^d_vec[1] + (-1)^d_vec[2])
-            gd_B1_2 = g_d2 * ((-1)^d_vec[1] - (-1)^d_vec[2])
+        δ_bond_A1_a = δ_bond_A1_a_s[d_index][3]
+        δ_bond_A1_b = δ_bond_A1_b_s[d_index][3]
+        δ_bond_B1_a = δ_bond_B1_a_s[d_index][3]
+        δ_bond_B1_b = δ_bond_B1_b_s[d_index][3]
 
-            for k in axes(ϕ_field, 2)
-                ky, kx = fldmod1(k, L)
-                kPd = Bsrcdir2trg[k, d_index]           # k + d  
-                fill_with_product!(temp_vec, view(ϕ_field, 1, kPd, :), view(ϕ_field, 1, k, :))
+        δ_BZ2_B1_a = δ_BZ2_B1_a_s[d_index][3]
+        δ_BZ2_A1_a = δ_BZ2_A1_a_s[d_index][3]
+        δ_BZ2_B1_b = δ_BZ2_B1_b_s[d_index][3]
+        δ_BZ2_A1_b = δ_BZ2_A1_b_s[d_index][3]
 
-                Φ_bar_A1_4[:] += temp_vec * gd_A1_4
-                Φ_bar_B1_4[:] += temp_vec * gd_B1_4
-                Φ_bar_A1P_4[:] += temp_vec * (-1)^(kx + ky) * gd_A1_4
+        δ_BZ4_B1_a = δ_BZ4_B1_a_s[d_index][3]
+        δ_BZ4_A1_a = δ_BZ4_A1_a_s[d_index][3]
+        δ_BZ4_B1_b = δ_BZ4_B1_b_s[d_index][3]
+        δ_BZ4_A1_b = δ_BZ4_A1_b_s[d_index][3]
 
-                Φ_bar_A1_2[:] += temp_vec * gd_A1_2
-                Φ_bar_B1_2[:] += temp_vec * gd_B1_2
-                Φ_bar_A1P_2[:] += temp_vec * (-1)^(kx + ky) * gd_A1_2
+        for k in axes(ϕ_field, 2)
+            ky, kx = fldmod1(k, L)
+            kPd = Bsrcdir2trg[k, d_index]           # k + d  
+            fill_with_product!(temp_vec, view(ϕ_field, 1, kPd, :), view(ϕ_field, 1, k, :))
 
-                Φ_bar_proxy_A1[:] += temp_vec * δ_A1
-                ΦP_bar_proxy_A1[:] += temp_vec * δP_A1
-                Φ_bar_proxy_B1[:] += temp_vec * δ_B1
-                ΦP_bar_proxy_B1[:] += temp_vec * δP_B1
+            Φ_bar_A1_4[:] += temp_vec * gd_A1_4
+            Φ_bar_B1_4[:] += temp_vec * gd_B1_4
+            Φ_bar_A1P_4[:] += temp_vec * (-1)^(kx + ky) * gd_A1_4
 
-            end
+            Φ_bar_A1_2[:] += temp_vec * gd_A1_2
+            Φ_bar_B1_2[:] += temp_vec * gd_B1_2
+            Φ_bar_A1P_2[:] += temp_vec * (-1)^(kx + ky) * gd_A1_2
+
+            Φ_bond_A1_a[:] += temp_vec * δ_bond_A1_a
+            Φ_bond_A1_b[:] += temp_vec * δ_bond_A1_b
+            Φ_bond_B1_a[:] += temp_vec * δ_bond_B1_a
+            Φ_bond_B1_b[:] += temp_vec * δ_bond_B1_b
+
+            Φ_nem_BZ2_A1_a[:] += temp_vec * δ_BZ2_A1_a
+            Φ_nem_BZ2_A1_b[:] += temp_vec * δ_BZ2_A1_b
+            Φ_nem_BZ2_B1_a[:] += temp_vec * δ_BZ2_B1_a
+            Φ_nem_BZ2_B1_b[:] += temp_vec * δ_BZ2_B1_b
+
+            Φ_nem_BZ4_A1_a[:] += temp_vec * δ_BZ4_A1_a
+            Φ_nem_BZ4_A1_b[:] += temp_vec * δ_BZ4_A1_b
+            Φ_nem_BZ4_B1_a[:] += temp_vec * δ_BZ4_B1_a
+            Φ_nem_BZ4_B1_b[:] += temp_vec * δ_BZ4_B1_b
         end
     end
     Φ_bar_A1_4 ./= (8U * N)
@@ -749,10 +998,18 @@ Written for Nϕ=1.
     Φ_bar_A1_2 ./= (4U * N)
     Φ_bar_B1_2 ./= (4U * N)
     Φ_bar_A1P_2 ./= (4U * N)
-    Φ_bar_proxy_A1 ./= (2U * N)
-    ΦP_bar_proxy_A1 ./= (2U * N)
-    Φ_bar_proxy_B1 ./= (2U * N)
-    ΦP_bar_proxy_B1 ./= (2U * N)
+    Φ_bond_A1_a ./= (2U * N)
+    Φ_bond_A1_b ./= (2U * N)
+    Φ_bond_B1_a ./= (2U * N)
+    Φ_bond_B1_b ./= (2U * N)
+    Φ_nem_BZ2_A1_a ./= (2U * N)
+    Φ_nem_BZ2_A1_b ./= (2U * N)
+    Φ_nem_BZ2_B1_a ./= (2U * N)
+    Φ_nem_BZ2_B1_b ./= (2U * N)
+    Φ_nem_BZ4_A1_a ./= (2U * N)
+    Φ_nem_BZ4_A1_b ./= (2U * N)
+    Φ_nem_BZ4_B1_a ./= (2U * N)
+    Φ_nem_BZ4_B1_b ./= (2U * N)
     return nothing
 end
 
@@ -772,12 +1029,12 @@ Written for Nϕ=1.
 
     Bsrcdir2trg = lat[:Bravais_srcdir2trg]
     #This function now only works for the compute_xxx_full versions of the below functions 
-    gd_s_4 = get!(lat, :gd_s_4, compute_g_d_4_full)
-    gd_s_2 = get!(lat, :gd_s_2, compute_g_d_2_full)
-    δ_A1_s = get!(lat, :δ_A1, compute_δ_A1_full)
-    δP_A1_s = get!(lat, :δP_A1, compute_δP_A1_full)
-    δ_B1_s = get!(lat, :δ_B1, compute_δ_B1_full)
-    δP_B1_s = get!(lat, :δP_B1, compute_δP_B1_full)
+    gd_s_4 = get!(lat, :gd_BZ4, compute_gd_BZ4_full)
+    gd_s_2 = get!(lat, :gd_BZ2, compute_gd_BZ2_full)
+    δ_A1_s = get!(lat, :δ_A1, compute_δ_bond_A1_a_full)
+    δP_A1_s = get!(lat, :δP_A1, compute_δ_bond_A1_b_full)
+    δ_B1_s = get!(lat, :δ_B1, compute_δ_bond_B1_a_full)
+    δP_B1_s = get!(lat, :δP_B1, compute_δ_bond_B1_b_full)
 
     Φ_bar_A1_4 = zeros(Float64, N_slices)
     Φ_bar_B1_4 = zeros(Float64, N_slices)
@@ -849,7 +1106,7 @@ Written for Nϕ=1.
     L = lat.Ls[1]
     N = length(lat)
     Bsrcdir2trg = lat[:Bravais_srcdir2trg]
-    gd_s_4 = get!(lat, :gd_s_4, compute_g_d_4)
+    gd_s_4 = get!(lat, :gd_BZ4, compute_gd_BZ4)
 
     ΦP_bar_A1 = zeros(Float64, N_slices)
     ΦP_bar_B1 = zeros(Float64, N_slices)

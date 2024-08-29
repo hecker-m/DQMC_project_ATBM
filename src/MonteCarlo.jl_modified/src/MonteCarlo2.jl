@@ -151,6 +151,8 @@ function __init__()
 
     return nothing
 end
+include("my_files/my_lattice_fcns.jl")
+export Bravais_dirdir2dir
 include("my_files/my_linalg.jl")
 include("my_files/helpful_fcns.jl")
 include("my_files/TwoBandModel_import.jl")
